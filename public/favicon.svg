@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <rect width="64" height="64" rx="12" fill="#0c101c"/>
+  <rect x="2" y="2" width="60" height="60" rx="10" stroke="#3b82f6" stroke-width="2" stroke-opacity="0.8"/>
+  <text x="32" y="40" text-anchor="middle" font-family="'Space Grotesk', -apple-system, sans-serif" font-weight="900" font-size="22" fill="#60a5fa" letter-spacing="1">JTP</text>
+  <circle cx="52" cy="52" r="3" fill="#38bdf8"/>
+</svg>

@@ -10,10 +10,10 @@ import { lovable } from "@/integrations/lovable/index";
 export const Route = createFileRoute("/auth")({
   head: () => ({
     meta: [
-      { title: "Sign in | ForgeLab" },
-      { name: "description", content: "Sign in to ForgeLab to submit designs and track your fabrication quotes." },
-      { property: "og:title", content: "Sign in | ForgeLab" },
-      { property: "og:description", content: "Access your ForgeLab fabrication workspace." },
+      { title: "Sign in | JTP" },
+      { name: "description", content: "Sign in to JTP to submit designs and track your fabrication quotes." },
+      { property: "og:title", content: "Sign in | JTP" },
+      { property: "og:description", content: "Access your JTP fabrication workspace." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -76,13 +76,18 @@ function AuthPage() {
     <main className="grid-surface flex min-h-screen items-center justify-center bg-background px-5 py-16 text-foreground">
       <div className="w-full max-w-md border border-border bg-background">
         <div className="border-b border-border p-8">
-          <Link to="/" className="flex items-center gap-3" aria-label="Back to ForgeLab home">
-            <span className="relative grid size-8 place-items-center border border-primary text-primary">
-              <Flame className="size-4" />
-              <span className="absolute -bottom-1 -right-1 size-2 bg-primary" />
+          <Link to="/" className="flex items-center gap-3" aria-label="Back to JTP home">
+            <span className="relative flex size-9 items-center justify-center border border-primary/60 bg-gradient-to-br from-primary/30 via-primary/10 to-transparent shadow-[0_0_14px_rgba(59,130,246,0.35)] transition-transform hover:scale-105">
+              <span className="font-display text-xs font-black tracking-widest uppercase bg-gradient-to-r from-blue-300 via-primary to-cyan-300 bg-clip-text text-transparent">
+                JTP
+              </span>
+              <span className="absolute -top-0.5 -left-0.5 size-1 border-t border-l border-primary" />
+              <span className="absolute -top-0.5 -right-0.5 size-1 border-t border-r border-primary" />
+              <span className="absolute -bottom-0.5 -left-0.5 size-1 border-b border-l border-primary" />
+              <span className="absolute -bottom-1 -right-1 size-1.5 bg-primary shadow-[0_0_8px_var(--primary)]" />
             </span>
-            <span className="font-display text-xl font-bold">
-              FORGE<span className="text-primary">LAB</span>
+            <span className="font-display text-2xl font-black tracking-widest uppercase bg-gradient-to-r from-blue-300 via-primary to-cyan-300 bg-clip-text text-transparent">
+              JTP
             </span>
           </Link>
           <h1 className="mt-8 text-3xl font-semibold">
@@ -158,7 +163,7 @@ function AuthPage() {
           </form>
 
           <p className="mt-6 text-center text-sm text-muted-foreground">
-            {mode === "signin" ? "New to ForgeLab?" : "Already have an account?"}{" "}
+            {mode === "signin" ? "New to JTP?" : "Already have an account?"}{" "}
             <button
               type="button"
               className="font-semibold text-primary hover:underline"
