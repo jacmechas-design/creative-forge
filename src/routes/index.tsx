@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import {
   ArrowRight,
   Box,
@@ -9,6 +9,9 @@ import {
   FileUp,
   Flame,
   Layers3,
+  LoaderCircle,
+  LogIn,
+  LogOut,
   Menu,
   Minus,
   PackageCheck,
@@ -20,9 +23,13 @@ import {
   Upload,
   Zap,
 } from "lucide-react";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
+import type { Tables } from "@/integrations/supabase/types";
 import workshopImage from "@/assets/forgelab-workshop.jpg";
 import partsImage from "@/assets/forgelab-parts.jpg";
 
