@@ -221,6 +221,24 @@ function Index() {
         </div>
       </section>
 
+      {user && myQuotes.length > 0 && (
+        <section className="border-b border-border py-16">
+          <div className="mx-auto max-w-7xl px-5 lg:px-8">
+            <div className="mb-8"><p className="font-mono text-xs uppercase text-primary">Your workspace</p><h2 className="mt-3 text-3xl font-semibold">Recent quotes</h2></div>
+            <div className="grid gap-px border border-border bg-border md:grid-cols-2 lg:grid-cols-3">
+              {myQuotes.map((q) => (
+                <div key={q.id} className="bg-background p-5">
+                  <div className="flex items-center justify-between"><span className="font-mono text-[10px] uppercase text-muted-foreground">{new Date(q.created_at).toLocaleDateString()}</span><span className="border border-primary/40 bg-primary/10 px-2 py-0.5 font-mono text-[10px] uppercase text-primary">{q.status.replace("_", " ")}</span></div>
+                  <h3 className="mt-4 text-sm font-semibold">{servicePricing[q.service as keyof typeof servicePricing]?.label ?? q.service} · {q.material}</h3>
+                  <p className="mt-1 truncate font-mono text-[10px] text-muted-foreground">{q.file_name}</p>
+                  <div className="mt-4 flex items-center justify-between text-sm"><span className="text-muted-foreground">Qty {q.quantity}</span><span className="font-mono font-semibold">${Number(q.estimated_price).toFixed(2)}</span></div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
       <section id="materials" className="border-b border-border py-24">
         <div className="mx-auto grid max-w-7xl gap-12 px-5 lg:grid-cols-2 lg:items-center lg:px-8">
           <div className="relative overflow-hidden border border-border"><img src={partsImage} alt="Precision parts manufactured in multiple ForgeLab materials" width={1408} height={1008} loading="lazy" className="aspect-[4/3] size-full object-cover" /><div className="absolute bottom-0 left-0 border-r border-t border-border bg-background/90 px-4 py-3 font-mono text-[10px] uppercase text-muted-foreground backdrop-blur">Material sample array / FL-06</div></div>
