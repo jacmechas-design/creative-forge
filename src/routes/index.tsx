@@ -149,7 +149,7 @@ function Index() {
   const scrollToQuote = () => quoteRef.current?.scrollIntoView({ behavior: "smooth" });
   const selectService = (id: keyof typeof servicePricing) => {
     setService(id);
-    setMaterial(servicePricing[id].materials[0]);
+    setMaterial(servicePricing[id].materials[0] ?? "");
   };
 
   return (
