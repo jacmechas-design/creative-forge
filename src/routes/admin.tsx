@@ -11,7 +11,6 @@ import {
   Package,
   PackagePlus,
   Pencil,
-  Plus,
   Save,
   Search,
   ShieldCheck,
@@ -128,6 +127,7 @@ function AdminPage() {
   const [category, setCategory] = useState("Todas");
   const [draft, setDraft] = useState<Product>(starterProducts[0]);
   const [newImage, setNewImage] = useState("");
+  const [isEditing, setIsEditing] = useState(false);
 
   useEffect(() => {
     setSignedIn(localStorage.getItem(SESSION_KEY) === "true");
@@ -167,9 +167,10 @@ function AdminPage() {
     toast.error("Credenciales de prueba no coinciden.");
   };
 
-  const openProduct = (product: Product) => {
+  const openProduct = (product: Product, edit = false) => {
     setSelectedId(product.id);
     setDraft(product);
+    setIsEditing(edit);
     setNewImage("");
   };
 
@@ -180,13 +181,15 @@ function AdminPage() {
       return exists ? current.map((product) => (product.id === normalized.id ? normalized : product)) : [normalized, ...current];
     });
     setSelectedId(normalized.id);
+    setIsEditing(false);
     toast.success("Producto guardado.");
   };
 
   const addProduct = () => {
-    const next = { ...emptyProduct, id: `PRD-${Date.now().toString().slice(-5)}`, sku: "JTP-NEW", images: [partsImage] };
+    const next = { ...emptyProduct, id: `PRD-${Date.now().toString().slice(-5)}`, name: "Nuevo producto", sku: "JTP-NEW", images: [partsImage] };
     setProducts((current) => [next, ...current]);
-    openProduct(next);
+    openProduct(next, true);
+    toast.success("Nuevo producto creado. Ya puedes editarlo.");
   };
 
   const updateBulkStatus = (status: ProductStatus) => {
@@ -198,7 +201,7 @@ function AdminPage() {
     const next = products.filter((product) => product.id !== id);
     setProducts(next);
     setSelectedRows((current) => current.filter((rowId) => rowId !== id));
-    openProduct(next[0] ?? emptyProduct);
+    openProduct(next[0] ?? emptyProduct, false);
   };
 
   const addImage = () => {
@@ -294,7 +297,12 @@ function AdminPage() {
                       <TableCell className="font-mono">${product.price}</TableCell>
                       <TableCell><Badge className="rounded-none" variant={stockStatus === "Agotado" ? "destructive" : "outline"}>{product.stock} · {stockStatus}</Badge></TableCell>
                       <TableCell><Badge className="rounded-none bg-secondary" variant="outline">{product.status}</Badge></TableCell>
-                      <TableCell className="text-right"><Button size="icon" variant="ghost" onClick={() => removeProduct(product.id)} aria-label="Eliminar producto"><Trash2 /></Button></TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-1">
+                          <Button size="icon" variant="ghost" onClick={() => openProduct(product, true)} aria-label="Editar producto"><Pencil /></Button>
+                          <Button size="icon" variant="ghost" onClick={() => removeProduct(product.id)} aria-label="Eliminar producto"><Trash2 /></Button>
+                        </div>
+                      </TableCell>
                     </TableRow>
                   );
                 })}
@@ -304,22 +312,31 @@ function AdminPage() {
 
           <aside className="border border-border bg-background">
             <div className="border-b border-border p-5">
-              <p className="font-mono text-xs uppercase text-primary">Editor rapido</p>
-              <h2 className="mt-2 text-2xl font-semibold">{selectedProduct.name || "Nuevo producto"}</h2>
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="font-mono text-xs uppercase text-primary">{isEditing ? "Editando producto" : "Vista de producto"}</p>
+                  <h2 className="mt-2 text-2xl font-semibold">{selectedProduct.name || "Nuevo producto"}</h2>
+                </div>
+                {!isEditing && selectedProduct.id && (
+                  <Button variant="industrial" size="sm" onClick={() => setIsEditing(true)}>
+                    <Pencil /> Editar
+                  </Button>
+                )}
+              </div>
               <p className="mt-1 text-sm text-muted-foreground">{lowStockCount} productos requieren revision de stock.</p>
             </div>
             <div className="space-y-4 p-5">
-              <Label className="block">Nombre<Input className="mt-2 rounded-none" value={draft.name} onChange={(event) => setDraft({ ...draft, name: event.target.value })} /></Label>
+              <Label className="block">Nombre<Input className="mt-2 rounded-none" value={draft.name} disabled={!isEditing} onChange={(event) => setDraft({ ...draft, name: event.target.value })} /></Label>
               <div className="grid grid-cols-2 gap-3">
-                <Label className="block">SKU<Input className="mt-2 rounded-none" value={draft.sku} onChange={(event) => setDraft({ ...draft, sku: event.target.value })} /></Label>
-                <Label className="block">Categoria<Input className="mt-2 rounded-none" value={draft.category} onChange={(event) => setDraft({ ...draft, category: event.target.value })} /></Label>
+                <Label className="block">SKU<Input className="mt-2 rounded-none" value={draft.sku} disabled={!isEditing} onChange={(event) => setDraft({ ...draft, sku: event.target.value })} /></Label>
+                <Label className="block">Categoria<Input className="mt-2 rounded-none" value={draft.category} disabled={!isEditing} onChange={(event) => setDraft({ ...draft, category: event.target.value })} /></Label>
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <Label className="block">Precio<Input className="mt-2 rounded-none" type="number" value={draft.price} onChange={(event) => setDraft({ ...draft, price: Number(event.target.value) })} /></Label>
-                <Label className="block">Stock<Input className="mt-2 rounded-none" type="number" value={draft.stock} onChange={(event) => setDraft({ ...draft, stock: Number(event.target.value) })} /></Label>
+                <Label className="block">Precio<Input className="mt-2 rounded-none" type="number" value={draft.price} disabled={!isEditing} onChange={(event) => setDraft({ ...draft, price: Number(event.target.value) })} /></Label>
+                <Label className="block">Stock<Input className="mt-2 rounded-none" type="number" value={draft.stock} disabled={!isEditing} onChange={(event) => setDraft({ ...draft, stock: Number(event.target.value) })} /></Label>
               </div>
-              <Label className="block">Estado<select className="mt-2 h-10 w-full border border-input bg-secondary px-3 text-sm" value={draft.status} onChange={(event) => setDraft({ ...draft, status: event.target.value as ProductStatus })}><option>Publicado</option><option>Borrador</option><option>Pausado</option></select></Label>
-              <Label className="block">Descripcion<Textarea className="mt-2 rounded-none" value={draft.description} onChange={(event) => setDraft({ ...draft, description: event.target.value })} /></Label>
+              <Label className="block">Estado<select className="mt-2 h-10 w-full border border-input bg-secondary px-3 text-sm disabled:opacity-50" value={draft.status} disabled={!isEditing} onChange={(event) => setDraft({ ...draft, status: event.target.value as ProductStatus })}><option>Publicado</option><option>Borrador</option><option>Pausado</option></select></Label>
+              <Label className="block">Descripcion<Textarea className="mt-2 rounded-none" value={draft.description} disabled={!isEditing} onChange={(event) => setDraft({ ...draft, description: event.target.value })} /></Label>
 
               <div className="border border-border p-3">
                 <div className="mb-3 flex items-center justify-between"><span className="text-sm font-semibold">Galeria</span><Badge className="rounded-none" variant="outline">{draft.images.length} imagenes</Badge></div>
@@ -328,17 +345,17 @@ function AdminPage() {
                     <div key={`${image}-${index}`} className="group relative aspect-square border border-border">
                       <img src={image} alt="" className="size-full object-cover" />
                       <div className="absolute inset-x-1 bottom-1 flex justify-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-                        <Button size="icon" variant="industrial" onClick={() => setDraft((current) => ({ ...current, images: current.images.map((item, itemIndex) => itemIndex === 0 ? image : itemIndex === index ? current.images[0] : item) }))} aria-label="Hacer principal"><Pencil /></Button>
-                        <Button size="icon" variant="industrial" onClick={() => setDraft((current) => ({ ...current, images: current.images.filter((_, itemIndex) => itemIndex !== index) }))} aria-label="Quitar imagen"><Trash2 /></Button>
+                        <Button size="icon" variant="industrial" disabled={!isEditing} onClick={() => setDraft((current) => ({ ...current, images: current.images.map((item, itemIndex) => itemIndex === 0 ? image : itemIndex === index ? current.images[0] : item) }))} aria-label="Hacer principal"><Pencil /></Button>
+                        <Button size="icon" variant="industrial" disabled={!isEditing} onClick={() => setDraft((current) => ({ ...current, images: current.images.filter((_, itemIndex) => itemIndex !== index) }))} aria-label="Quitar imagen"><Trash2 /></Button>
                       </div>
                       {index === 0 && <span className="absolute left-1 top-1 bg-primary px-1.5 py-0.5 font-mono text-[9px] uppercase text-primary-foreground">Principal</span>}
                     </div>
                   ))}
                 </div>
-                <div className="mt-3 flex gap-2"><Input className="rounded-none" placeholder="Pegar URL de imagen" value={newImage} onChange={(event) => setNewImage(event.target.value)} /><Button variant="industrial" onClick={addImage}><ImagePlus /></Button></div>
-                <div className="mt-3 flex gap-2"><Button variant="industrial" size="sm" onClick={() => setDraft((current) => ({ ...current, images: [...current.images.slice(1), current.images[0]].filter(Boolean) }))}><ArrowDown /> Rotar</Button><Button variant="industrial" size="sm" onClick={() => setDraft((current) => ({ ...current, images: [current.images.at(-1)!, ...current.images.slice(0, -1)].filter(Boolean) }))}><ArrowUp /> Subir ultima</Button></div>
+                <div className="mt-3 flex gap-2"><Input className="rounded-none" placeholder="Pegar URL de imagen" value={newImage} disabled={!isEditing} onChange={(event) => setNewImage(event.target.value)} /><Button variant="industrial" disabled={!isEditing} onClick={addImage}><ImagePlus /></Button></div>
+                <div className="mt-3 flex gap-2"><Button variant="industrial" size="sm" disabled={!isEditing} onClick={() => setDraft((current) => ({ ...current, images: [...current.images.slice(1), current.images[0]].filter(Boolean) }))}><ArrowDown /> Rotar</Button><Button variant="industrial" size="sm" disabled={!isEditing} onClick={() => setDraft((current) => ({ ...current, images: [current.images.at(-1)!, ...current.images.slice(0, -1)].filter(Boolean) }))}><ArrowUp /> Subir ultima</Button></div>
               </div>
-              <Button className="w-full" size="xl" variant="forge" onClick={saveDraft}><Save /> Guardar producto</Button>
+              {isEditing ? <Button className="w-full" size="xl" variant="forge" onClick={saveDraft}><Save /> Guardar producto</Button> : <Button className="w-full" size="xl" variant="industrial" onClick={() => setIsEditing(true)}><Pencil /> Editar producto</Button>}
             </div>
           </aside>
         </div>
