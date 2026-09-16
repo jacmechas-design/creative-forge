@@ -77,9 +77,70 @@ function Index() {
   const quoteRef = useRef<HTMLElement>(null);
   const [service, setService] = useState<keyof typeof servicePricing>("print");
   const [quantity, setQuantity] = useState(1);
-  const [material, setMaterial] = useState(servicePricing.print.materials[0]);
+  const [material, setMaterial] = useState<string>(servicePricing.print.materials[0] ?? "PLA Pro");
+  const [file, setFile] = useState<File | null>(null);
   const [fileName, setFileName] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [myQuotes, setMyQuotes] = useState<Tables<"quotes">[]>([]);
+  const navigate = useNavigate();
+  const { user, loading: authLoading, signOut } = useAuth();
+
+  useEffect(() => {
+    if (!user) {
+      setMyQuotes([]);
+      return;
+    }
+    supabase
+      .from("quotes")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(5)
+      .then(({ data, error }) => {
+        if (!error && data) setMyQuotes(data);
+      });
+  }, [user]);
+
+  const submitQuote = async () => {
+    if (!user) {
+      toast.info("Sign in to submit your design for review.");
+      navigate({ to: "/auth" });
+      return;
+    }
+    if (!file) return;
+    setSubmitting(true);
+    const filePath = `${user.id}/${crypto.randomUUID()}-${file.name}`;
+    const { error: uploadError } = await supabase.storage
+      .from("design-files")
+      .upload(filePath, file);
+    if (uploadError) {
+      setSubmitting(false);
+      toast.error("File upload failed. Please try again.");
+      return;
+    }
+    const { data, error } = await supabase
+      .from("quotes")
+      .insert({
+        user_id: user.id,
+        service,
+        material,
+        quantity,
+        estimated_price: Number(price),
+        file_name: file.name,
+        file_path: filePath,
+      })
+      .select()
+      .single();
+    setSubmitting(false);
+    if (error) {
+      toast.error("Could not save your quote. Please try again.");
+      return;
+    }
+    toast.success("Quote submitted. Our specialists will review your design.");
+    setMyQuotes((prev) => [data, ...prev].slice(0, 5));
+    setFile(null);
+    setFileName("");
+  };
   const price = useMemo(() => {
     const data = servicePricing[service];
     const discount = quantity >= 20 ? 0.76 : quantity >= 10 ? 0.84 : quantity >= 5 ? 0.92 : 1;
@@ -88,7 +149,7 @@ function Index() {
   const scrollToQuote = () => quoteRef.current?.scrollIntoView({ behavior: "smooth" });
   const selectService = (id: keyof typeof servicePricing) => {
     setService(id);
-    setMaterial(servicePricing[id].materials[0]);
+    setMaterial(servicePricing[id].materials[0] ?? "");
   };
 
   return (
@@ -104,7 +165,7 @@ function Index() {
           <nav className="hidden items-center gap-7 text-sm font-medium text-muted-foreground md:flex" aria-label="Primary navigation">
             <a href="#services" className="transition-colors hover:text-foreground">Services</a><a href="#materials" className="transition-colors hover:text-foreground">Materials</a><a href="#process" className="transition-colors hover:text-foreground">How it works</a>
           </nav>
-          <div className="hidden items-center gap-2 md:flex"><Button variant="ghost" size="icon" aria-label="Shopping bag"><ShoppingBag /></Button><Button variant="forge" onClick={scrollToQuote}>Get a quote <ArrowRight /></Button></div>
+          <div className="hidden items-center gap-2 md:flex">{!authLoading && (user ? <><span className="max-w-40 truncate font-mono text-xs text-muted-foreground">{user.email}</span><Button variant="ghost" size="icon" aria-label="Sign out" onClick={() => signOut()}><LogOut /></Button></> : <Button variant="industrial" asChild><Link to="/auth"><LogIn /> Sign in</Link></Button>)}<Button variant="forge" onClick={scrollToQuote}>Get a quote <ArrowRight /></Button></div>
           <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setMenuOpen(!menuOpen)} aria-label="Open menu"><Menu /></Button>
         </div>
         {menuOpen && <nav className="border-t border-border bg-background px-5 py-4 md:hidden"><div className="flex flex-col gap-4 text-sm"><a href="#services" onClick={() => setMenuOpen(false)}>Services</a><a href="#materials" onClick={() => setMenuOpen(false)}>Materials</a><a href="#process" onClick={() => setMenuOpen(false)}>How it works</a><Button variant="forge" onClick={scrollToQuote}>Get a quote</Button></div></nav>}
@@ -147,18 +208,36 @@ function Index() {
                 <label className="block text-sm font-medium">Material<select value={material} onChange={e => setMaterial(e.target.value)} className="mt-2 h-12 w-full rounded-none border border-input bg-secondary px-3 text-sm outline-none focus:border-primary">{servicePricing[service].materials.map(m => <option key={m}>{m}</option>)}</select></label>
                 <div><span className="text-sm font-medium">Quantity</span><div className="mt-2 flex h-12 border border-input bg-secondary"><Button variant="ghost" size="icon" className="h-full rounded-none" onClick={() => setQuantity(Math.max(1, quantity - 1))} aria-label="Decrease quantity"><Minus /></Button><Input className="h-full rounded-none border-0 text-center font-mono shadow-none" type="number" min={1} max={100} value={quantity} onChange={e => setQuantity(Math.max(1, Math.min(100, Number(e.target.value))))} /><Button variant="ghost" size="icon" className="h-full rounded-none" onClick={() => setQuantity(Math.min(100, quantity + 1))} aria-label="Increase quantity"><Plus /></Button></div></div>
               </div>
-              <label className="mt-8 flex min-h-40 cursor-pointer flex-col items-center justify-center border border-dashed border-line bg-secondary/50 p-6 text-center transition-colors hover:border-primary"><FileUp className="mb-3 size-7 text-primary" /><span className="text-sm font-semibold">{fileName || "Drop a design file or browse"}</span><span className="mt-1 font-mono text-[10px] uppercase text-muted-foreground">STL, STEP, SVG, DXF · max 100 MB</span><input type="file" className="sr-only" accept=".stl,.step,.stp,.svg,.dxf" onChange={e => setFileName(e.target.files?.[0]?.name ?? "")} /></label>
+              <label className="mt-8 flex min-h-40 cursor-pointer flex-col items-center justify-center border border-dashed border-line bg-secondary/50 p-6 text-center transition-colors hover:border-primary"><FileUp className="mb-3 size-7 text-primary" /><span className="text-sm font-semibold">{fileName || "Drop a design file or browse"}</span><span className="mt-1 font-mono text-[10px] uppercase text-muted-foreground">STL, STEP, SVG, DXF · max 100 MB</span><input type="file" className="sr-only" accept=".stl,.step,.stp,.svg,.dxf" onChange={e => { const f = e.target.files?.[0] ?? null; setFile(f); setFileName(f?.name ?? ""); }} /></label>
             </div>
             <aside className="technical-panel border-t border-border p-6 sm:p-9 lg:border-l lg:border-t-0">
               <div className="flex items-center justify-between border-b border-border pb-5"><span className="font-mono text-xs uppercase text-muted-foreground">Estimate</span><span className="flex items-center gap-2 font-mono text-[10px] uppercase text-success"><span className="size-1.5 rounded-full bg-success" /> Live</span></div>
               <dl className="space-y-4 py-6 text-sm"><div className="flex justify-between"><dt className="text-muted-foreground">Process</dt><dd>{servicePricing[service].label}</dd></div><div className="flex justify-between"><dt className="text-muted-foreground">Material</dt><dd>{material}</dd></div><div className="flex justify-between"><dt className="text-muted-foreground">Quantity</dt><dd className="font-mono">{quantity}</dd></div><div className="flex justify-between"><dt className="text-muted-foreground">Lead time</dt><dd>2–4 business days</dd></div></dl>
               <div className="border-y border-border py-6"><span className="font-mono text-[10px] uppercase text-muted-foreground">Estimated total</span><div className="mt-2 flex items-end gap-2"><span className="font-display text-5xl font-semibold">${price}</span><span className="pb-1 text-xs text-muted-foreground">USD</span></div><p className="mt-2 text-xs text-muted-foreground">Final price confirmed after design review.</p></div>
-              <Button variant="forge" size="xl" className="mt-6 w-full" disabled={!fileName}>{fileName ? "Submit for review" : "Upload file to continue"}<ArrowRight /></Button>
+              <Button variant="forge" size="xl" className="mt-6 w-full" disabled={!fileName || submitting} onClick={submitQuote}>{submitting ? <><LoaderCircle className="animate-spin" /> Uploading…</> : fileName ? <>Submit for review<ArrowRight /></> : "Upload file to continue"}</Button>
               <div className="mt-5 flex items-center justify-center gap-2 text-xs text-muted-foreground"><ShieldCheck className="size-4" /> Files are encrypted and confidential</div>
             </aside>
           </div>
         </div>
       </section>
+
+      {user && myQuotes.length > 0 && (
+        <section className="border-b border-border py-16">
+          <div className="mx-auto max-w-7xl px-5 lg:px-8">
+            <div className="mb-8"><p className="font-mono text-xs uppercase text-primary">Your workspace</p><h2 className="mt-3 text-3xl font-semibold">Recent quotes</h2></div>
+            <div className="grid gap-px border border-border bg-border md:grid-cols-2 lg:grid-cols-3">
+              {myQuotes.map((q) => (
+                <div key={q.id} className="bg-background p-5">
+                  <div className="flex items-center justify-between"><span className="font-mono text-[10px] uppercase text-muted-foreground">{new Date(q.created_at).toLocaleDateString()}</span><span className="border border-primary/40 bg-primary/10 px-2 py-0.5 font-mono text-[10px] uppercase text-primary">{q.status.replace("_", " ")}</span></div>
+                  <h3 className="mt-4 text-sm font-semibold">{servicePricing[q.service as keyof typeof servicePricing]?.label ?? q.service} · {q.material}</h3>
+                  <p className="mt-1 truncate font-mono text-[10px] text-muted-foreground">{q.file_name}</p>
+                  <div className="mt-4 flex items-center justify-between text-sm"><span className="text-muted-foreground">Qty {q.quantity}</span><span className="font-mono font-semibold">${Number(q.estimated_price).toFixed(2)}</span></div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       <section id="materials" className="border-b border-border py-24">
         <div className="mx-auto grid max-w-7xl gap-12 px-5 lg:grid-cols-2 lg:items-center lg:px-8">
