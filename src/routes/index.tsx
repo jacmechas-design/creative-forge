@@ -77,7 +77,7 @@ function Index() {
   const quoteRef = useRef<HTMLElement>(null);
   const [service, setService] = useState<keyof typeof servicePricing>("print");
   const [quantity, setQuantity] = useState(1);
-  const [material, setMaterial] = useState(servicePricing.print.materials[0]);
+  const [material, setMaterial] = useState<string>(servicePricing.print.materials[0] ?? "PLA Pro");
   const [file, setFile] = useState<File | null>(null);
   const [fileName, setFileName] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
