@@ -36,9 +36,9 @@ import partsImage from "@/assets/forgelab-parts.jpg";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "ForgeLab | 3D Printing & Laser Fabrication" },
+      { title: "JTP | 3D Printing & Laser Fabrication" },
       { name: "description", content: "Upload your design and get precision 3D printing, laser engraving, or laser cutting on demand." },
-      { property: "og:title", content: "ForgeLab | Ideas Made Physical" },
+      { property: "og:title", content: "JTP | Ideas Made Physical" },
       { property: "og:description", content: "Fast, precise digital fabrication from one prototype to production runs." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -60,7 +60,17 @@ const servicePricing = {
 };
 
 function BrandMark() {
-  return <span className="relative grid size-8 place-items-center border border-primary text-primary"><Flame className="size-4" /><span className="absolute -bottom-1 -right-1 size-2 bg-primary" /></span>;
+  return (
+    <span className="relative flex size-9 items-center justify-center border border-primary/60 bg-gradient-to-br from-primary/30 via-primary/10 to-transparent shadow-[0_0_14px_rgba(59,130,246,0.35)] transition-transform hover:scale-105">
+      <span className="font-display text-xs font-black tracking-widest uppercase bg-gradient-to-r from-blue-300 via-primary to-cyan-300 bg-clip-text text-transparent">
+        JTP
+      </span>
+      <span className="absolute -top-0.5 -left-0.5 size-1 border-t border-l border-primary" />
+      <span className="absolute -top-0.5 -right-0.5 size-1 border-t border-r border-primary" />
+      <span className="absolute -bottom-0.5 -left-0.5 size-1 border-b border-l border-primary" />
+      <span className="absolute -bottom-1 -right-1 size-1.5 bg-primary shadow-[0_0_8px_var(--primary)]" />
+    </span>
+  );
 }
 
 function Index() {
@@ -68,8 +78,69 @@ function Index() {
   const [service, setService] = useState<keyof typeof servicePricing>("print");
   const [quantity, setQuantity] = useState(1);
   const [material, setMaterial] = useState(servicePricing.print.materials[0]);
+  const [file, setFile] = useState<File | null>(null);
   const [fileName, setFileName] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [myQuotes, setMyQuotes] = useState<Tables<"quotes">[]>([]);
+  const navigate = useNavigate();
+  const { user, loading: authLoading, signOut } = useAuth();
+
+  useEffect(() => {
+    if (!user) {
+      setMyQuotes([]);
+      return;
+    }
+    supabase
+      .from("quotes")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(5)
+      .then(({ data, error }) => {
+        if (!error && data) setMyQuotes(data);
+      });
+  }, [user]);
+
+  const submitQuote = async () => {
+    if (!user) {
+      toast.info("Sign in to submit your design for review.");
+      navigate({ to: "/auth" });
+      return;
+    }
+    if (!file) return;
+    setSubmitting(true);
+    const filePath = `${user.id}/${crypto.randomUUID()}-${file.name}`;
+    const { error: uploadError } = await supabase.storage
+      .from("design-files")
+      .upload(filePath, file);
+    if (uploadError) {
+      setSubmitting(false);
+      toast.error("File upload failed. Please try again.");
+      return;
+    }
+    const { data, error } = await supabase
+      .from("quotes")
+      .insert({
+        user_id: user.id,
+        service,
+        material,
+        quantity,
+        estimated_price: Number(price),
+        file_name: file.name,
+        file_path: filePath,
+      })
+      .select()
+      .single();
+    setSubmitting(false);
+    if (error) {
+      toast.error("Could not save your quote. Please try again.");
+      return;
+    }
+    toast.success("Quote submitted. Our specialists will review your design.");
+    setMyQuotes((prev) => [data, ...prev].slice(0, 5));
+    setFile(null);
+    setFileName("");
+  };
   const price = useMemo(() => {
     const data = servicePricing[service];
     const discount = quantity >= 20 ? 0.76 : quantity >= 10 ? 0.84 : quantity >= 5 ? 0.92 : 1;
@@ -85,7 +156,12 @@ function Index() {
     <main className="min-h-screen bg-background text-foreground selection:bg-primary selection:text-primary-foreground">
       <header className="fixed inset-x-0 top-0 z-50 border-b border-border/80 bg-background/90 backdrop-blur-xl">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-5 lg:px-8">
-          <a href="#top" className="flex items-center gap-3" aria-label="ForgeLab home"><BrandMark /><span className="font-display text-xl font-bold">FORGE<span className="text-primary">LAB</span></span></a>
+          <a href="#top" className="flex items-center gap-3" aria-label="JTP home">
+            <BrandMark />
+            <span className="font-display text-2xl font-black tracking-widest uppercase bg-gradient-to-r from-blue-300 via-primary to-cyan-300 bg-clip-text text-transparent">
+              JTP
+            </span>
+          </a>
           <nav className="hidden items-center gap-7 text-sm font-medium text-muted-foreground md:flex" aria-label="Primary navigation">
             <a href="#services" className="transition-colors hover:text-foreground">Services</a><a href="#materials" className="transition-colors hover:text-foreground">Materials</a><a href="#process" className="transition-colors hover:text-foreground">How it works</a>
           </nav>
@@ -132,7 +208,7 @@ function Index() {
                 <label className="block text-sm font-medium">Material<select value={material} onChange={e => setMaterial(e.target.value)} className="mt-2 h-12 w-full rounded-none border border-input bg-secondary px-3 text-sm outline-none focus:border-primary">{servicePricing[service].materials.map(m => <option key={m}>{m}</option>)}</select></label>
                 <div><span className="text-sm font-medium">Quantity</span><div className="mt-2 flex h-12 border border-input bg-secondary"><Button variant="ghost" size="icon" className="h-full rounded-none" onClick={() => setQuantity(Math.max(1, quantity - 1))} aria-label="Decrease quantity"><Minus /></Button><Input className="h-full rounded-none border-0 text-center font-mono shadow-none" type="number" min={1} max={100} value={quantity} onChange={e => setQuantity(Math.max(1, Math.min(100, Number(e.target.value))))} /><Button variant="ghost" size="icon" className="h-full rounded-none" onClick={() => setQuantity(Math.min(100, quantity + 1))} aria-label="Increase quantity"><Plus /></Button></div></div>
               </div>
-              <label className="mt-8 flex min-h-40 cursor-pointer flex-col items-center justify-center border border-dashed border-line bg-secondary/50 p-6 text-center transition-colors hover:border-primary"><FileUp className="mb-3 size-7 text-primary" /><span className="text-sm font-semibold">{fileName || "Drop a design file or browse"}</span><span className="mt-1 font-mono text-[10px] uppercase text-muted-foreground">STL, STEP, SVG, DXF · max 100 MB</span><input type="file" className="sr-only" accept=".stl,.step,.stp,.svg,.dxf" onChange={e => setFileName(e.target.files?.[0]?.name ?? "")} /></label>
+              <label className="mt-8 flex min-h-40 cursor-pointer flex-col items-center justify-center border border-dashed border-line bg-secondary/50 p-6 text-center transition-colors hover:border-primary"><FileUp className="mb-3 size-7 text-primary" /><span className="text-sm font-semibold">{fileName || "Drop a design file or browse"}</span><span className="mt-1 font-mono text-[10px] uppercase text-muted-foreground">STL, STEP, SVG, DXF · max 100 MB</span><input type="file" className="sr-only" accept=".stl,.step,.stp,.svg,.dxf" onChange={e => { const f = e.target.files?.[0] ?? null; setFile(f); setFileName(f?.name ?? ""); }} /></label>
             </div>
             <aside className="technical-panel border-t border-border p-6 sm:p-9 lg:border-l lg:border-t-0">
               <div className="flex items-center justify-between border-b border-border pb-5"><span className="font-mono text-xs uppercase text-muted-foreground">Estimate</span><span className="flex items-center gap-2 font-mono text-[10px] uppercase text-success"><span className="size-1.5 rounded-full bg-success" /> Live</span></div>
@@ -158,7 +234,7 @@ function Index() {
 
       <section className="border-y border-primary/40 bg-primary py-14 text-primary-foreground"><div className="mx-auto flex max-w-7xl flex-col items-start justify-between gap-7 px-5 md:flex-row md:items-center lg:px-8"><div><p className="font-mono text-xs font-semibold uppercase">Ready to make something real?</p><h2 className="mt-2 text-3xl font-semibold sm:text-4xl">Your next build starts with a file.</h2></div><Button className="h-12 rounded-none border border-primary-foreground bg-primary-foreground px-6 text-sm font-semibold text-background hover:bg-primary-foreground/90" onClick={scrollToQuote}>Start instant quote <ArrowRight /></Button></div></section>
 
-      <footer className="bg-background py-12"><div className="mx-auto max-w-7xl px-5 lg:px-8"><div className="flex flex-col justify-between gap-8 border-b border-border pb-10 md:flex-row"><div><div className="flex items-center gap-3"><BrandMark /><span className="font-display text-xl font-bold">FORGE<span className="text-primary">LAB</span></span></div><p className="mt-4 max-w-xs text-sm text-muted-foreground">Precision fabrication, on demand. Built for designers, engineers, and makers.</p></div><div className="grid grid-cols-2 gap-12 text-sm"><div><p className="font-mono text-[10px] uppercase text-muted-foreground">Services</p><div className="mt-4 space-y-2"><a className="block hover:text-primary" href="#services">3D Printing</a><a className="block hover:text-primary" href="#services">Laser Engraving</a><a className="block hover:text-primary" href="#services">Laser Cutting</a></div></div><div><p className="font-mono text-[10px] uppercase text-muted-foreground">Contact</p><div className="mt-4 space-y-2"><a className="block hover:text-primary" href="mailto:hello@forgelab.co">hello@forgelab.co</a><span className="block text-muted-foreground">Mon–Fri / 8–6</span></div></div></div></div><div className="flex flex-col justify-between gap-3 pt-6 font-mono text-[10px] uppercase text-muted-foreground sm:flex-row"><span>© 2026 ForgeLab Manufacturing</span><span>Made with precision</span></div></div></footer>
+      <footer className="bg-background py-12"><div className="mx-auto max-w-7xl px-5 lg:px-8"><div className="flex flex-col justify-between gap-8 border-b border-border pb-10 md:flex-row"><div><div className="flex items-center gap-3"><BrandMark /><span className="font-display text-2xl font-black tracking-widest uppercase bg-gradient-to-r from-blue-300 via-primary to-cyan-300 bg-clip-text text-transparent">JTP</span></div><p className="mt-4 max-w-xs text-sm text-muted-foreground">Precision fabrication, on demand. Built for designers, engineers, and makers.</p></div><div className="grid grid-cols-2 gap-12 text-sm"><div><p className="font-mono text-[10px] uppercase text-muted-foreground">Services</p><div className="mt-4 space-y-2"><a className="block hover:text-primary" href="#services">3D Printing</a><a className="block hover:text-primary" href="#services">Laser Engraving</a><a className="block hover:text-primary" href="#services">Laser Cutting</a></div></div><div><p className="font-mono text-[10px] uppercase text-muted-foreground">Contact</p><div className="mt-4 space-y-2"><a className="block hover:text-primary" href="mailto:hello@forgelab.co">hello@forgelab.co</a><span className="block text-muted-foreground">Mon–Fri / 8–6</span></div></div></div></div><div className="flex flex-col justify-between gap-3 pt-6 font-mono text-[10px] uppercase text-muted-foreground sm:flex-row"><span>© 2026 JTP Manufacturing</span><span>Made with precision</span></div></div></footer>
     </main>
   );
 }
