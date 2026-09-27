@@ -239,6 +239,14 @@ function JacDesign() {
     primary_color: "#1e3a8a",
   });
 
+  const [dynamicCategories, setDynamicCategories] = useState<any[]>([
+    { id: "fiestas", label: "Fiestas y eventos" },
+    { id: "madera", label: "Madera y láser" },
+    { id: "3d", label: "Impresión 3D" },
+    { id: "postres", label: "Postres saludables" },
+    { id: "juguetes", label: "Juguetes 3D y fidgets" }
+  ]);
+
   useEffect(() => {
     (supabase as any).from("ui_settings").select("*").eq("id", "default").single().then(({ data }: { data: any }) => {
       if (data) setUiSettings(data as any);
@@ -247,8 +255,11 @@ function JacDesign() {
     (supabase as any).from("app_content").select("data").eq("id", "global_settings").single().then(({ data: row }: { data: any }) => {
       if (row?.data) setGlobalSettings((prev: any) => ({ ...prev, ...row.data }));
     });
-  }, []);
 
+    (supabase as any).from("app_content").select("data").eq("id", "categories").single().then(({ data: row }: { data: any }) => {
+      if (row?.data && Array.isArray(row.data)) setDynamicCategories(row.data);
+    });
+  }, []);
 
   const toast = (msg: string) => {
     const id = ++toastId.current;
@@ -256,15 +267,23 @@ function JacDesign() {
     setTimeout(() => setToasts((x) => x.filter((y) => y.id !== id)), 2600);
   };
 
-  const categoryTabs = useMemo(
-    () =>
-      CATS.map((c) => ({
+  const categoryTabs = useMemo(() => {
+    const tabs = [{
+      id: "todos",
+      label: tr({ en: "All products", fr: "Tous les produits", es: "Todos los productos" }),
+      count: products.length
+    }];
+    
+    dynamicCategories.forEach(c => {
+      tabs.push({
         id: c.id,
-        label: tr(CAT_LABELS[c.id]),
-        count: c.id === "todos" ? products.length : products.filter((p) => p.cat === c.id).length,
-      })),
-    [tr, products]
-  );
+        label: c.label,
+        count: products.filter((p) => p.cat === c.id).length
+      });
+    });
+    
+    return tabs;
+  }, [tr, products, dynamicCategories]);
 
   const filtered = useMemo(() => {
     let list = products;
@@ -543,7 +562,7 @@ function JacDesign() {
             {categoryTabs.map((c) => (
               <button
                 key={c.id}
-                onClick={() => setCat(c.id)}
+                onClick={() => setCat(c.id as "todos" | Cat)}
                 className={`inline-flex items-center gap-2 rounded-full px-3.5 py-2 text-xs font-semibold transition-all sm:text-sm ${
                   cat === c.id
                     ? "scale-105 bg-gradient-warm text-rose-foreground shadow-soft"

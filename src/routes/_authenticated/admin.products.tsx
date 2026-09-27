@@ -5,7 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAdminCatalog } from "@/hooks/useCatalog";
 import { useAuth } from "@/hooks/useAuth";
-import { CAT_LABELS, LEAD_LABELS, type Cat, type LeadKey } from "@/data/products";
+import { LEAD_LABELS, type Cat, type LeadKey } from "@/data/products";
 import { IMAGE_MAP, seedRows, type ShopProduct } from "@/lib/catalog";
 import { translateProductCopy } from "@/lib/translate.functions";
 import { Card, Empty, Field, Pill, btnGhost, btnPrimary, cadExact, downloadCsv, inputCls } from "@/components/admin/kit";
@@ -17,8 +17,34 @@ export const Route = createFileRoute("/_authenticated/admin/products")({
   component: ProductsAdmin,
 });
 
-const CATS: Cat[] = ["fiestas", "madera", "3d", "postres", "juguetes"];
 const LEADS = Object.keys(LEAD_LABELS) as LeadKey[];
+
+/** Dynamic categories loaded from app_content (Supabase) */
+type DynCat = { id: string; label: string };
+const FALLBACK_CATS: DynCat[] = [
+  { id: "fiestas", label: "Fiestas y eventos" },
+  { id: "madera", label: "Madera y láser" },
+  { id: "3d", label: "Impresión 3D" },
+  { id: "postres", label: "Postres saludables" },
+  { id: "juguetes", label: "Juguetes 3D y fidgets" },
+];
+
+function useDynamicCategories() {
+  const [cats, setCats] = useState<DynCat[]>(FALLBACK_CATS);
+  useEffect(() => {
+    (supabase as any)
+      .from("app_content")
+      .select("data")
+      .eq("id", "categories")
+      .single()
+      .then(({ data: row }: { data: any }) => {
+        if (row?.data && Array.isArray(row.data) && row.data.length > 0) {
+          setCats(row.data);
+        }
+      });
+  }, []);
+  return cats;
+}
 
 interface Draft {
   rowId?: string | undefined;
@@ -123,6 +149,7 @@ function ProductsAdmin() {
   const { isAdmin } = useAuth();
   const qc = useQueryClient();
   const { data, isLoading } = useAdminCatalog();
+  const dynCats = useDynamicCategories();
   const [search, setSearch] = useState("");
   const [cat, setCat] = useState<"todos" | Cat>("todos");
   const [draft, setDraft] = useState<Draft | null>(null);
@@ -322,9 +349,9 @@ function ProductsAdmin() {
           />
           <select value={cat} onChange={(e) => setCat(e.target.value as Cat | "todos")} className={`${inputCls} sm:max-w-xs`}>
             <option value="todos">Todas las categorías</option>
-            {CATS.map((c) => (
-              <option key={c} value={c}>
-                {CAT_LABELS[c].es}
+            {dynCats.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.label}
               </option>
             ))}
           </select>
@@ -372,7 +399,7 @@ function ProductsAdmin() {
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-bold">{p.name.es || p.name.en}</p>
                   <p className="truncate text-[11px] text-muted-foreground">
-                    {p.id} · {CAT_LABELS[p.cat].es} · {cadExact(p.price)}
+                    {p.id} · {dynCats.find((c) => c.id === p.cat)?.label ?? p.cat} · {cadExact(p.price)}
                   </p>
                 </div>
                 {isAdmin && (
@@ -436,9 +463,9 @@ function ProductsAdmin() {
               </Field>
               <Field label="Categoría">
                 <select value={draft.cat} onChange={(e) => setDraft({ ...draft, cat: e.target.value as Cat })} className={inputCls}>
-                  {CATS.map((c) => (
-                    <option key={c} value={c}>
-                      {CAT_LABELS[c].es}
+                  {dynCats.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.label}
                     </option>
                   ))}
                 </select>
