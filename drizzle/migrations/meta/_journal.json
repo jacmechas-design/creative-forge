@@ -15,6 +15,13 @@
       "when": 1789435994636,
       "tag": "0001_storage_policies_design_files",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1789436000000,
+      "tag": "0002_store_catalog",
+      "breakpoints": true
     }
   ]
 }

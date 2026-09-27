@@ -1,365 +1,106 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import {
-  ArrowDown,
-  ArrowUp,
-  Boxes,
-  Check,
-  GalleryHorizontal,
-  ImagePlus,
-  LayoutDashboard,
-  LogOut,
-  Package,
-  PackagePlus,
-  Pencil,
-  Save,
-  Search,
-  ShieldCheck,
-  Trash2,
-} from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
-import { toast } from "sonner";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Textarea } from "@/components/ui/textarea";
-import workshopImage from "@/assets/forgelab-workshop.jpg";
-import partsImage from "@/assets/forgelab-parts.jpg";
+import { createFileRoute, Link } from '@tanstack/react-router';
+import { useEffect, useState } from 'react';
+import { Archive, ArrowLeft, ArrowRight, Copy, LogOut, Package, Pencil, Plus, RefreshCw, Search } from 'lucide-react';
+import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { ProductEditor } from '@/components/product-editor';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
+import { catalogError, imageUrl, listProducts, saveProduct } from '@/lib/catalog';
+import { kindLabels, money, newProduct, statusLabels, type Product, type ProductInput, type InventoryMovement } from '@/lib/catalog-model';
 
-export const Route = createFileRoute("/admin")({
-  head: () => ({
-    meta: [
-      { title: "Admin tienda virtual | JTP" },
-      { name: "description", content: "Sistema de administracion para catalogo, galeria e inventario de la tienda virtual JTP." },
-    ],
-  }),
-  component: AdminPage,
-});
-
-type ProductStatus = "Publicado" | "Borrador" | "Pausado";
-type StockStatus = "En stock" | "Bajo stock" | "Agotado";
-
-type Product = {
-  id: string;
-  name: string;
-  sku: string;
-  category: string;
-  price: number;
-  stock: number;
-  status: ProductStatus;
-  featured: boolean;
-  description: string;
-  images: string[];
-};
-
-const ADMIN_EMAIL = "admin@jtp.test";
-const ADMIN_PASSWORD = "Admin123!";
-const SESSION_KEY = "jtp-admin-confirmed";
-
-const starterProducts: Product[] = [
-  {
-    id: "PRD-1001",
-    name: "Pieza tecnica impresa 3D",
-    sku: "JTP-3D-001",
-    category: "3D Printing",
-    price: 32,
-    stock: 18,
-    status: "Publicado",
-    featured: true,
-    description: "Componente funcional fabricado en PLA Pro o PETG para prototipos y repuestos.",
-    images: [partsImage, workshopImage],
-  },
-  {
-    id: "PRD-1002",
-    name: "Grabado laser personalizado",
-    sku: "JTP-LZ-014",
-    category: "Laser Engraving",
-    price: 24,
-    stock: 7,
-    status: "Publicado",
-    featured: true,
-    description: "Servicio de grabado permanente sobre madera, acrilico, aluminio anodizado o cuero.",
-    images: [workshopImage, partsImage],
-  },
-  {
-    id: "PRD-1003",
-    name: "Corte laser en acrilico",
-    sku: "JTP-CUT-022",
-    category: "Laser Cutting",
-    price: 45,
-    stock: 0,
-    status: "Pausado",
-    featured: false,
-    description: "Cortes limpios para letreros, plantillas, displays y piezas de ensamble.",
-    images: [partsImage],
-  },
-];
-
-const emptyProduct: Product = {
-  id: "",
-  name: "",
-  sku: "",
-  category: "3D Printing",
-  price: 0,
-  stock: 0,
-  status: "Borrador",
-  featured: false,
-  description: "",
-  images: [],
-};
-
-function getStockStatus(stock: number): StockStatus {
-  if (stock <= 0) return "Agotado";
-  if (stock <= 8) return "Bajo stock";
-  return "En stock";
-}
+export const Route = createFileRoute('/admin')({ head: () => ({ meta: [{ title: 'Administracion | JTP' }, { name: 'robots', content: 'noindex,nofollow' }] }), component: AdminPage });
 
 function AdminPage() {
-  const [signedIn, setSignedIn] = useState(false);
-  const [email, setEmail] = useState(ADMIN_EMAIL);
-  const [password, setPassword] = useState(ADMIN_PASSWORD);
-  const [products, setProducts] = useState<Product[]>(starterProducts);
-  const [selectedId, setSelectedId] = useState(starterProducts[0].id);
-  const [selectedRows, setSelectedRows] = useState<string[]>([]);
-  const [query, setQuery] = useState("");
-  const [category, setCategory] = useState("Todas");
-  const [draft, setDraft] = useState<Product>(starterProducts[0]);
-  const [newImage, setNewImage] = useState("");
-  const [isEditing, setIsEditing] = useState(false);
+  const { user, loading, signOut } = useAuth();
+  const [access, setAccess] = useState<{ userId: string; allowed: boolean } | null>(null);
+  const [error, setError] = useState('');
+  const [products, setProducts] = useState<Product[]>([]);
+  const [pending, setPending] = useState(false);
+  const [query, setQuery] = useState('');
+  const [status, setStatus] = useState('all');
+  const [category, setCategory] = useState('all');
+  const [page, setPage] = useState(0);
+  const [selected, setSelected] = useState<string[]>([]);
+  const [editor, setEditor] = useState<{ initial: ProductInput; existing: Product | undefined } | null>(null);
+  const [tab, setTab] = useState<'products' | 'inventory'>('products');
+  const [movements, setMovements] = useState<InventoryMovement[]>([]);
+  const allowed = !!user && access?.userId === user.id && access.allowed;
 
   useEffect(() => {
-    setSignedIn(localStorage.getItem(SESSION_KEY) === "true");
-    const saved = localStorage.getItem("jtp-products");
-    if (saved) {
-      const parsed = JSON.parse(saved) as Product[];
-      setProducts(parsed);
-      setSelectedId(parsed[0]?.id ?? "");
-      setDraft(parsed[0] ?? emptyProduct);
-    }
-  }, []);
-
-  useEffect(() => {
-    localStorage.setItem("jtp-products", JSON.stringify(products));
-  }, [products]);
-
-  const categories = useMemo(() => ["Todas", ...Array.from(new Set(products.map((product) => product.category)))], [products]);
-  const filteredProducts = useMemo(() => {
-    return products.filter((product) => {
-      const matchesQuery = [product.name, product.sku, product.category].join(" ").toLowerCase().includes(query.toLowerCase());
-      const matchesCategory = category === "Todas" || product.category === category;
-      return matchesQuery && matchesCategory;
+    if (!user) return;
+    let active = true;
+    setError('');
+    supabase.from('store_roles').select('role').eq('user_id', user.id).maybeSingle().then(({ data, error: cause }) => {
+      if (!active) return;
+      if (cause) setError(catalogError(cause));
+      setAccess({ userId: user.id, allowed: !cause && !!data });
     });
-  }, [category, products, query]);
-  const selectedProduct = products.find((product) => product.id === selectedId) ?? products[0] ?? emptyProduct;
-  const revenue = products.reduce((sum, product) => sum + product.price * product.stock, 0);
-  const lowStockCount = products.filter((product) => product.stock <= 8).length;
+    return () => { active = false; };
+  }, [user?.id]);
 
-  const signIn = (event: React.FormEvent) => {
-    event.preventDefault();
-    if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
-      localStorage.setItem(SESSION_KEY, "true");
-      setSignedIn(true);
-      toast.success("Administrador de pruebas confirmado.");
-      return;
+  async function reload() {
+    setPending(true); setError('');
+    try {
+      const data = await listProducts(); setProducts(data); setSelected([]);
+      const { data: history, error: cause } = await supabase.from('inventory_movements').select('*').order('created_at', { ascending: false }).limit(100);
+      if (cause) throw cause;
+      setMovements(history);
+    } catch (cause) { setError(catalogError(cause)); }
+    finally { setPending(false); }
+  }
+  useEffect(() => { if (allowed) void reload(); }, [allowed]);
+
+  async function bulk(nextStatus: ProductInput['status'], ids = selected) {
+    if (!ids.length || !window.confirm(`Cambiar ${ids.length} producto(s) a ${statusLabels[nextStatus]}?`)) return;
+    setPending(true); setError('');
+    let count = 0;
+    const failures: string[] = [];
+    for (const product of products.filter(item => ids.includes(item.id))) {
+      try { await saveProduct({ ...product, status: nextStatus }, product); count++; }
+      catch (cause) { failures.push(`${product.name}: ${catalogError(cause)}`); }
     }
-    toast.error("Credenciales de prueba no coinciden.");
-  };
-
-  const openProduct = (product: Product, edit = false) => {
-    setSelectedId(product.id);
-    setDraft(product);
-    setIsEditing(edit);
-    setNewImage("");
-  };
-
-  const saveDraft = () => {
-    const normalized = { ...draft, id: draft.id || `PRD-${Date.now().toString().slice(-5)}` };
-    setProducts((current) => {
-      const exists = current.some((product) => product.id === normalized.id);
-      return exists ? current.map((product) => (product.id === normalized.id ? normalized : product)) : [normalized, ...current];
-    });
-    setSelectedId(normalized.id);
-    setIsEditing(false);
-    toast.success("Producto guardado.");
-  };
-
-  const addProduct = () => {
-    const next = { ...emptyProduct, id: `PRD-${Date.now().toString().slice(-5)}`, name: "Nuevo producto", sku: "JTP-NEW", images: [partsImage] };
-    setProducts((current) => [next, ...current]);
-    openProduct(next, true);
-    toast.success("Nuevo producto creado. Ya puedes editarlo.");
-  };
-
-  const updateBulkStatus = (status: ProductStatus) => {
-    setProducts((current) => current.map((product) => (selectedRows.includes(product.id) ? { ...product, status } : product)));
-    toast.success(`${selectedRows.length} productos actualizados.`);
-  };
-
-  const removeProduct = (id: string) => {
-    const next = products.filter((product) => product.id !== id);
-    setProducts(next);
-    setSelectedRows((current) => current.filter((rowId) => rowId !== id));
-    openProduct(next[0] ?? emptyProduct, false);
-  };
-
-  const addImage = () => {
-    if (!newImage.trim()) return;
-    setDraft((current) => ({ ...current, images: [...current.images, newImage.trim()] }));
-    setNewImage("");
-  };
-
-  if (!signedIn) {
-    return (
-      <main className="grid-surface flex min-h-screen items-center justify-center bg-background px-5 py-12 text-foreground">
-        <section className="w-full max-w-lg border border-border bg-background">
-          <div className="border-b border-border p-7">
-            <Link to="/" className="font-display text-2xl font-black tracking-widest text-primary">JTP</Link>
-            <Badge className="mt-6 rounded-none border-primary/40 bg-primary/10 text-primary" variant="outline">
-              <ShieldCheck className="mr-1 size-3" /> Usuario administrador de pruebas confirmado
-            </Badge>
-            <h1 className="mt-5 text-3xl font-semibold">Panel de gestion de tienda virtual.</h1>
-            <p className="mt-2 text-sm leading-6 text-muted-foreground">Accede con el usuario creado para pruebas y administra productos, inventario y galeria.</p>
-          </div>
-          <form onSubmit={signIn} className="space-y-5 p-7">
-            <Label className="block">Email<Input className="mt-2 h-12 rounded-none" type="email" value={email} onChange={(event) => setEmail(event.target.value)} /></Label>
-            <Label className="block">Password<Input className="mt-2 h-12 rounded-none" type="password" value={password} onChange={(event) => setPassword(event.target.value)} /></Label>
-            <div className="border border-border bg-secondary p-4 font-mono text-xs text-muted-foreground">
-              admin: {ADMIN_EMAIL}<br />password: {ADMIN_PASSWORD}<br />estado: confirmado
-            </div>
-            <Button className="w-full" size="xl" variant="forge" type="submit"><ShieldCheck /> Entrar como administrador</Button>
-          </form>
-        </section>
-      </main>
-    );
+    await reload();
+    if (count) toast.success(`${count} producto(s) actualizados.`);
+    if (failures.length) setError(failures.join(' '));
   }
 
-  return (
-    <main className="min-h-screen bg-background text-foreground">
-      <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-5">
-          <div className="flex items-center gap-3"><LayoutDashboard className="size-5 text-primary" /><span className="font-display text-xl font-semibold">JTP Admin</span></div>
-          <div className="flex items-center gap-2">
-            <Badge className="hidden rounded-none bg-success/15 text-success sm:inline-flex" variant="outline"><Check className="mr-1 size-3" /> admin confirmado</Badge>
-            <Button variant="industrial" size="sm" onClick={() => { localStorage.removeItem(SESSION_KEY); setSignedIn(false); }}><LogOut /> Salir</Button>
-          </div>
-        </div>
-      </header>
+  if (loading || (user && access?.userId !== user.id)) return <main className="p-8" role="status">Verificando acceso...</main>;
+  if (!user || !allowed) return <main className="mx-auto max-w-lg space-y-5 px-5 py-20"><Link to="/" className="text-xl font-semibold">JTP</Link><h1 className="text-2xl font-semibold">Administracion de tienda</h1><p>{user ? 'Tu cuenta no tiene acceso a la administracion.' : 'Inicia sesion con tu cuenta de administrador.'}</p>{error && <p role="alert" className="text-destructive">{error}</p>}<Button asChild><Link to="/auth">Iniciar sesion</Link></Button>{user && <Button variant="outline" onClick={() => signOut()}>Cerrar sesion</Button>}</main>;
 
-      <section className="mx-auto max-w-7xl px-5 py-8">
-        <div className="mb-6 flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
-          <div>
-            <p className="font-mono text-xs uppercase text-primary">Sistema completo / catalogo, galeria, inventario</p>
-            <h1 className="mt-2 text-4xl font-semibold">Gestion de tienda virtual</h1>
-          </div>
-          <Button variant="forge" onClick={addProduct}><PackagePlus /> Nuevo producto</Button>
-        </div>
+  const categories = [...new Set(products.map(product => product.category).filter(Boolean))].sort();
+  const filtered = products.filter(product => (status === 'all' ? product.status !== 'archived' : product.status === status) && (category === 'all' || product.category === category) && `${product.name} ${product.sku}`.toLowerCase().includes(query.toLowerCase()));
+  const pages = Math.max(1, Math.ceil(filtered.length / 20));
+  const currentPage = Math.min(page, pages - 1);
+  const visible = filtered.slice(currentPage * 20, currentPage * 20 + 20);
+  const activeProducts = products.filter(product => product.status !== 'archived');
 
-        <div className="grid gap-px border border-border bg-border md:grid-cols-4">
-          {[
-            [Package, "Productos", products.length],
-            [Boxes, "Inventario", products.reduce((sum, product) => sum + product.stock, 0)],
-            [GalleryHorizontal, "Imagenes", products.reduce((sum, product) => sum + product.images.length, 0)],
-            [ShieldCheck, "Valor stock", `$${revenue.toLocaleString()}`],
-          ].map(([Icon, label, value]) => {
-            const StatIcon = Icon as typeof Package;
-            return <div key={label as string} className="bg-background p-5"><StatIcon className="size-5 text-primary" /><p className="mt-5 text-3xl font-semibold">{value as string}</p><p className="mt-1 text-xs uppercase text-muted-foreground">{label as string}</p></div>;
-          })}
-        </div>
-
-        <div className="mt-6 grid gap-6 lg:grid-cols-[1.35fr_.65fr]">
-          <section className="border border-border bg-background">
-            <div className="flex flex-col gap-3 border-b border-border p-4 md:flex-row">
-              <div className="relative flex-1"><Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" /><Input className="h-11 rounded-none pl-10" placeholder="Buscar por nombre, SKU o categoria" value={query} onChange={(event) => setQuery(event.target.value)} /></div>
-              <select className="h-11 border border-input bg-secondary px-3 text-sm" value={category} onChange={(event) => setCategory(event.target.value)}>{categories.map((item) => <option key={item}>{item}</option>)}</select>
-              <Button variant="industrial" disabled={!selectedRows.length} onClick={() => updateBulkStatus("Publicado")}>Publicar</Button>
-              <Button variant="industrial" disabled={!selectedRows.length} onClick={() => updateBulkStatus("Pausado")}>Pausar</Button>
-            </div>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-10"></TableHead><TableHead>Producto</TableHead><TableHead>Precio</TableHead><TableHead>Stock</TableHead><TableHead>Estado</TableHead><TableHead className="text-right">Accion</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredProducts.map((product) => {
-                  const stockStatus = getStockStatus(product.stock);
-                  return (
-                    <TableRow key={product.id} className={selectedId === product.id ? "bg-accent/40" : ""}>
-                      <TableCell><Checkbox checked={selectedRows.includes(product.id)} onCheckedChange={(checked) => setSelectedRows((current) => checked ? [...current, product.id] : current.filter((id) => id !== product.id))} /></TableCell>
-                      <TableCell>
-                        <button className="flex items-center gap-3 text-left" onClick={() => openProduct(product)}>
-                          <img src={product.images[0] || partsImage} alt="" className="size-12 border border-border object-cover" />
-                          <span><span className="block font-semibold">{product.name}</span><span className="font-mono text-xs text-muted-foreground">{product.sku} · {product.category}</span></span>
-                        </button>
-                      </TableCell>
-                      <TableCell className="font-mono">${product.price}</TableCell>
-                      <TableCell><Badge className="rounded-none" variant={stockStatus === "Agotado" ? "destructive" : "outline"}>{product.stock} · {stockStatus}</Badge></TableCell>
-                      <TableCell><Badge className="rounded-none bg-secondary" variant="outline">{product.status}</Badge></TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-1">
-                          <Button size="icon" variant="ghost" onClick={() => openProduct(product, true)} aria-label="Editar producto"><Pencil /></Button>
-                          <Button size="icon" variant="ghost" onClick={() => removeProduct(product.id)} aria-label="Eliminar producto"><Trash2 /></Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </section>
-
-          <aside className="border border-border bg-background">
-            <div className="border-b border-border p-5">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="font-mono text-xs uppercase text-primary">{isEditing ? "Editando producto" : "Vista de producto"}</p>
-                  <h2 className="mt-2 text-2xl font-semibold">{selectedProduct.name || "Nuevo producto"}</h2>
-                </div>
-                {!isEditing && selectedProduct.id && (
-                  <Button variant="industrial" size="sm" onClick={() => setIsEditing(true)}>
-                    <Pencil /> Editar
-                  </Button>
-                )}
-              </div>
-              <p className="mt-1 text-sm text-muted-foreground">{lowStockCount} productos requieren revision de stock.</p>
-            </div>
-            <div className="space-y-4 p-5">
-              <Label className="block">Nombre<Input className="mt-2 rounded-none" value={draft.name} disabled={!isEditing} onChange={(event) => setDraft({ ...draft, name: event.target.value })} /></Label>
-              <div className="grid grid-cols-2 gap-3">
-                <Label className="block">SKU<Input className="mt-2 rounded-none" value={draft.sku} disabled={!isEditing} onChange={(event) => setDraft({ ...draft, sku: event.target.value })} /></Label>
-                <Label className="block">Categoria<Input className="mt-2 rounded-none" value={draft.category} disabled={!isEditing} onChange={(event) => setDraft({ ...draft, category: event.target.value })} /></Label>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <Label className="block">Precio<Input className="mt-2 rounded-none" type="number" value={draft.price} disabled={!isEditing} onChange={(event) => setDraft({ ...draft, price: Number(event.target.value) })} /></Label>
-                <Label className="block">Stock<Input className="mt-2 rounded-none" type="number" value={draft.stock} disabled={!isEditing} onChange={(event) => setDraft({ ...draft, stock: Number(event.target.value) })} /></Label>
-              </div>
-              <Label className="block">Estado<select className="mt-2 h-10 w-full border border-input bg-secondary px-3 text-sm disabled:opacity-50" value={draft.status} disabled={!isEditing} onChange={(event) => setDraft({ ...draft, status: event.target.value as ProductStatus })}><option>Publicado</option><option>Borrador</option><option>Pausado</option></select></Label>
-              <Label className="block">Descripcion<Textarea className="mt-2 rounded-none" value={draft.description} disabled={!isEditing} onChange={(event) => setDraft({ ...draft, description: event.target.value })} /></Label>
-
-              <div className="border border-border p-3">
-                <div className="mb-3 flex items-center justify-between"><span className="text-sm font-semibold">Galeria</span><Badge className="rounded-none" variant="outline">{draft.images.length} imagenes</Badge></div>
-                <div className="grid grid-cols-3 gap-2">
-                  {draft.images.map((image, index) => (
-                    <div key={`${image}-${index}`} className="group relative aspect-square border border-border">
-                      <img src={image} alt="" className="size-full object-cover" />
-                      <div className="absolute inset-x-1 bottom-1 flex justify-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-                        <Button size="icon" variant="industrial" disabled={!isEditing} onClick={() => setDraft((current) => ({ ...current, images: current.images.map((item, itemIndex) => itemIndex === 0 ? image : itemIndex === index ? current.images[0] : item) }))} aria-label="Hacer principal"><Pencil /></Button>
-                        <Button size="icon" variant="industrial" disabled={!isEditing} onClick={() => setDraft((current) => ({ ...current, images: current.images.filter((_, itemIndex) => itemIndex !== index) }))} aria-label="Quitar imagen"><Trash2 /></Button>
-                      </div>
-                      {index === 0 && <span className="absolute left-1 top-1 bg-primary px-1.5 py-0.5 font-mono text-[9px] uppercase text-primary-foreground">Principal</span>}
-                    </div>
-                  ))}
-                </div>
-                <div className="mt-3 flex gap-2"><Input className="rounded-none" placeholder="Pegar URL de imagen" value={newImage} disabled={!isEditing} onChange={(event) => setNewImage(event.target.value)} /><Button variant="industrial" disabled={!isEditing} onClick={addImage}><ImagePlus /></Button></div>
-                <div className="mt-3 flex gap-2"><Button variant="industrial" size="sm" disabled={!isEditing} onClick={() => setDraft((current) => ({ ...current, images: [...current.images.slice(1), current.images[0]].filter(Boolean) }))}><ArrowDown /> Rotar</Button><Button variant="industrial" size="sm" disabled={!isEditing} onClick={() => setDraft((current) => ({ ...current, images: [current.images.at(-1)!, ...current.images.slice(0, -1)].filter(Boolean) }))}><ArrowUp /> Subir ultima</Button></div>
-              </div>
-              {isEditing ? <Button className="w-full" size="xl" variant="forge" onClick={saveDraft}><Save /> Guardar producto</Button> : <Button className="w-full" size="xl" variant="industrial" onClick={() => setIsEditing(true)}><Pencil /> Editar producto</Button>}
-            </div>
-          </aside>
-        </div>
-      </section>
-    </main>
-  );
+  return <main className="min-h-screen bg-background text-foreground">
+    <header className="border-b border-border"><div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-5 py-4"><Link to="/" className="text-xl font-semibold">JTP / Tienda</Link><div className="flex min-w-0 items-center gap-3"><span className="max-w-48 truncate text-sm text-muted-foreground">{user.email}</span><Button size="icon" variant="ghost" aria-label="Cerrar sesion" title="Cerrar sesion" disabled={!!editor} onClick={() => signOut()}><LogOut /></Button></div></div></header>
+    <div className="mx-auto max-w-7xl px-5 py-6">
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3"><h1 className="text-2xl font-semibold">Gestion de tienda</h1><div className="flex gap-2"><Button variant="outline" size="icon" aria-label="Actualizar catalogo" title="Actualizar catalogo" disabled={pending || !!editor} onClick={reload}><RefreshCw className={pending ? 'animate-spin' : ''} /></Button><Button disabled={pending || !!editor} onClick={() => { setTab('products'); setEditor({ initial: newProduct(), existing: undefined }); }}><Plus />Nuevo producto</Button></div></div>
+      <div className="mb-6 grid grid-cols-2 gap-4 border-y border-border py-4 md:grid-cols-4">{[['Productos activos', activeProducts.length], ['Publicados', activeProducts.filter(p => p.status === 'published').length], ['Unidades', activeProducts.filter(p => p.kind === 'stock').reduce((sum, p) => sum + p.stock, 0)], ['Stock bajo', activeProducts.filter(p => p.kind === 'stock' && p.stock <= p.low_stock_threshold).length]].map(([label, value]) => <div key={label}><p className="text-sm text-muted-foreground">{label}</p><p className="mt-1 text-2xl font-semibold">{value}</p></div>)}</div>
+      <nav className="mb-5 flex gap-2" aria-label="Modulos"><Button variant={tab === 'products' ? 'default' : 'outline'} onClick={() => setTab('products')}>Productos</Button><Button variant={tab === 'inventory' ? 'default' : 'outline'} disabled={!!editor} onClick={() => setTab('inventory')}>Inventario</Button></nav>
+      {error && <p role="alert" className="mb-4 border border-destructive p-3 text-sm text-destructive">{error}</p>}
+      {products.length === 1000 && <p className="mb-3 text-sm">Mostrando los 1000 productos modificados mas recientemente.</p>}
+      {tab === 'inventory' ? <section><h2 className="mb-4 text-lg font-semibold">Ultimos movimientos</h2><Table><TableHeader><TableRow><TableHead>Fecha</TableHead><TableHead>Producto</TableHead><TableHead>Anterior</TableHead><TableHead>Actual</TableHead><TableHead>Motivo</TableHead></TableRow></TableHeader><TableBody>{movements.map(movement => <TableRow key={movement.id}><TableCell>{new Date(movement.created_at).toLocaleString('es')}</TableCell><TableCell>{products.find(p => p.id === movement.product_id)?.name ?? movement.product_id}</TableCell><TableCell>{movement.previous_stock}</TableCell><TableCell>{movement.new_stock}</TableCell><TableCell>{movement.reason === 'Initial stock' ? 'Stock inicial' : 'Ajuste de catalogo'}</TableCell></TableRow>)}</TableBody></Table>{!movements.length && <p className="py-8 text-muted-foreground">Sin movimientos.</p>}</section> : <div className={`grid gap-6 ${editor ? 'lg:grid-cols-[minmax(0,1fr)_minmax(320px,440px)]' : ''}`}>
+        <section className="min-w-0">
+          <div className="mb-4 flex flex-wrap gap-2"><div className="relative min-w-40 flex-1"><Search className="absolute left-3 top-3 size-4 text-muted-foreground" /><Input aria-label="Buscar productos" placeholder="Nombre o SKU" className="pl-9" value={query} onChange={e => { setQuery(e.target.value); setPage(0); }} /></div><select aria-label="Filtrar estado" className="h-10 max-w-full border border-input bg-background px-2 text-sm" value={status} onChange={e => { setStatus(e.target.value); setPage(0); }}><option value="all">Activos</option>{Object.entries(statusLabels).map(([key, label]) => <option key={key} value={key}>{label}</option>)}</select><select aria-label="Filtrar categoria" className="h-10 max-w-full border border-input bg-background px-2 text-sm" value={category} onChange={e => { setCategory(e.target.value); setPage(0); }}><option value="all">Todas las categorias</option>{categories.map(value => <option key={value}>{value}</option>)}</select></div>
+          {selected.length > 0 && <div className="mb-3 flex flex-wrap items-center gap-2"><span className="text-sm">{selected.length} seleccionados</span><Button size="sm" variant="outline" disabled={pending || !!editor} onClick={() => bulk('published')}>Publicar</Button><Button size="sm" variant="outline" disabled={pending || !!editor} onClick={() => bulk('paused')}>Pausar</Button></div>}
+          <Table><TableHeader><TableRow><TableHead><Checkbox aria-label="Seleccionar pagina" checked={visible.length > 0 && visible.every(p => selected.includes(p.id))} onCheckedChange={checked => setSelected(checked ? [...new Set([...selected, ...visible.map(p => p.id)])] : selected.filter(id => !visible.some(p => p.id === id)))} /></TableHead><TableHead>Producto</TableHead><TableHead>Precio</TableHead><TableHead>Stock</TableHead><TableHead>Estado</TableHead><TableHead>Acciones</TableHead></TableRow></TableHeader><TableBody>{visible.map(product => <TableRow key={product.id}>
+            <TableCell><Checkbox aria-label={`Seleccionar ${product.name}`} checked={selected.includes(product.id)} onCheckedChange={checked => setSelected(checked ? [...selected, product.id] : selected.filter(id => id !== product.id))} /></TableCell>
+            <TableCell><div className="flex items-center gap-3">{product.images[0] ? <img src={imageUrl(product.images[0].path)} alt="" className="size-12 shrink-0 object-cover" /> : <Package className="size-10 shrink-0 text-muted-foreground" />}<div className="min-w-32 max-w-64"><p className="break-words font-medium">{product.name}</p><p className="text-xs text-muted-foreground">{product.sku} · {product.category}</p></div></div></TableCell>
+            <TableCell className="whitespace-nowrap">{money(product.price, product.currency)}</TableCell><TableCell>{product.kind === 'stock' ? <span className={product.stock <= product.low_stock_threshold ? 'text-destructive' : ''}>{product.stock}</span> : kindLabels[product.kind]}</TableCell><TableCell>{statusLabels[product.status]}</TableCell>
+            <TableCell><div className="flex"><Button size="icon" variant="ghost" title="Editar producto" aria-label={`Editar ${product.name}`} disabled={pending || !!editor} onClick={() => setEditor({ initial: product, existing: product })}><Pencil /></Button><Button size="icon" variant="ghost" title="Duplicar producto" aria-label={`Duplicar ${product.name}`} disabled={pending || !!editor} onClick={() => setEditor({ initial: { ...product, name: `${product.name.slice(0, 150)} (copia)`, sku: '', status: 'draft', stock: 0 }, existing: undefined })}><Copy /></Button><Button size="icon" variant="ghost" title="Archivar producto" aria-label={`Archivar ${product.name}`} disabled={pending || !!editor || product.status === 'archived'} onClick={() => bulk('archived', [product.id])}><Archive /></Button></div></TableCell>
+          </TableRow>)}</TableBody></Table>
+          {!visible.length && <p role="status" className="py-12 text-center text-muted-foreground">{pending ? 'Cargando productos...' : 'No hay productos para mostrar.'}</p>}
+          <div className="mt-4 flex items-center justify-between gap-2"><span className="text-sm text-muted-foreground">{filtered.length} productos · {currentPage + 1}/{pages}</span><div className="flex gap-1"><Button variant="outline" size="icon" aria-label="Pagina anterior" disabled={currentPage === 0} onClick={() => setPage(currentPage - 1)}><ArrowLeft /></Button><Button variant="outline" size="icon" aria-label="Pagina siguiente" disabled={currentPage + 1 >= pages} onClick={() => setPage(currentPage + 1)}><ArrowRight /></Button></div></div>
+        </section>
+        {editor && <ProductEditor key={editor.existing?.id ?? 'new'} initial={editor.initial} existing={editor.existing} userId={user.id} onClose={() => setEditor(null)} onSaved={product => { setProducts(current => [product, ...current.filter(p => p.id !== product.id)]); setEditor(null); void reload(); }} />}
+      </div>}
+    </div>
+  </main>;
 }

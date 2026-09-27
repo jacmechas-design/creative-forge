@@ -1,3 +1,5 @@
+import type { Product, ProductInput, InventoryMovement } from '../../lib/catalog-model';
+
 export type Json =
   | string
   | number
@@ -14,6 +16,24 @@ export type Database = {
   }
   public: {
     Tables: {
+      products: {
+        Row: Product
+        Insert: ProductInput & { id?: string }
+        Update: Partial<ProductInput>
+        Relationships: []
+      }
+      store_roles: {
+        Row: { user_id: string; role: 'admin' | 'operator' }
+        Insert: { user_id: string; role: 'admin' | 'operator' }
+        Update: { role?: 'admin' | 'operator' }
+        Relationships: []
+      }
+      inventory_movements: {
+        Row: InventoryMovement
+        Insert: never
+        Update: never
+        Relationships: []
+      }
       profiles: {
         Row: {
           company: string | null
