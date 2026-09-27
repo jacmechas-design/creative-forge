@@ -36,7 +36,7 @@ function AdminSettings() {
 
   const fetchSettings = async () => {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("ui_settings")
         .select("*")
         .eq("id", "default")
@@ -60,7 +60,7 @@ function AdminSettings() {
   const saveSettings = async () => {
     setSaving(true);
     try {
-      const { error } = await supabase.from("ui_settings").upsert({
+      const { error } = await (supabase as any).from("ui_settings").upsert({
         ...settings,
         id: "default",
         updated_at: new Date().toISOString(),

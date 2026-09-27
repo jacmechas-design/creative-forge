@@ -14,8 +14,8 @@ const NAV = [
   { to: "/admin/quotes", label: "Cotizaciones", adminOnly: false },
   { to: "/admin/messages", label: "Mensajes", adminOnly: false },
   { to: "/admin/team", label: "Equipo", adminOnly: true },
-  { to: "/admin/settings", label: "Interfaz", adminOnly: true },
-] as const;
+  { to: "/admin/settings" as string, label: "Interfaz", adminOnly: true },
+];
 
 function AdminLayout() {
   const { user, isAdmin, isStaff, loading, roles } = useAuth();

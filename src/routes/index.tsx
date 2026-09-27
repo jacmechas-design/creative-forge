@@ -234,7 +234,7 @@ function JacDesign() {
   });
 
   useEffect(() => {
-    supabase.from("ui_settings").select("*").eq("id", "default").single().then(({ data }) => {
+    (supabase as any).from("ui_settings").select("*").eq("id", "default").single().then(({ data }: { data: any }) => {
       if (data) setUiSettings(data as any);
     });
   }, []);
@@ -719,6 +719,7 @@ function JacDesign() {
           )}
         </div>
       </section>
+      )}
 
       {/* CUSTOMIZER */}
       <Customizer
