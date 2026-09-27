@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState, useEffect } from "react";
 import { Quoter3D } from "@/components/Quoter3D";
 import { Customizer } from "@/components/Customizer";
 import { useI18n, LANGS } from "@/i18n";
@@ -225,6 +225,19 @@ function JacDesign() {
   const [buyer, setBuyer] = useState({ name: "", email: "", phone: "" });
   const [sending, setSending] = useState(false);
   const toastId = useRef(0);
+  const [uiSettings, setUiSettings] = useState({
+    show_hero: true,
+    show_quoter: true,
+    show_catalog: true,
+    show_reviews: true,
+    show_services: true
+  });
+
+  useEffect(() => {
+    supabase.from("ui_settings").select("*").eq("id", "default").single().then(({ data }) => {
+      if (data) setUiSettings(data as any);
+    });
+  }, []);
 
 
   const toast = (msg: string) => {
@@ -417,6 +430,7 @@ function JacDesign() {
       </header>
 
       {/* HERO */}
+      {uiSettings.show_hero && (
       <section
         id="inicio"
         className="relative overflow-hidden bg-gradient-to-br from-amber-50 via-white to-amber-50 dark:from-dark dark:via-dark dark:to-secondary"
@@ -489,8 +503,10 @@ function JacDesign() {
           </ul>
         </div>
       </section>
+      )}
 
       {/* CATALOG */}
+      {uiSettings.show_catalog && (
       <section id="colecciones" className="bg-muted/60 py-14 sm:py-20 lg:py-28">
         <div className="mx-auto max-w-7xl px-4 lg:px-8">
           <div className="mx-auto mb-10 max-w-3xl text-center">
@@ -714,6 +730,7 @@ function JacDesign() {
 
 
       {/* 3D QUOTER */}
+      {uiSettings.show_quoter && (
       <section id="cotizador" className="bg-muted/40 py-14 sm:py-20 lg:py-28">
         <div className="mx-auto max-w-7xl px-4 lg:px-8">
           <div className="mb-10 max-w-3xl">
@@ -737,8 +754,10 @@ function JacDesign() {
           />
         </div>
       </section>
+      )}
 
       {/* REVIEWS */}
+      {uiSettings.show_reviews && (
       <section id="galeria" className="py-14 sm:py-20 lg:py-28">
         <div className="mx-auto max-w-7xl px-4 lg:px-8">
           <div className="mx-auto mb-10 max-w-2xl text-center">
@@ -773,6 +792,7 @@ function JacDesign() {
           </div>
         </div>
       </section>
+      )}
 
       {/* FOOTER + CONTACT */}
       <footer className="border-t border-border bg-muted/50 py-12 lg:py-16">

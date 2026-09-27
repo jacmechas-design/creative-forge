@@ -14,6 +14,7 @@ const NAV = [
   { to: "/admin/quotes", label: "Cotizaciones", adminOnly: false },
   { to: "/admin/messages", label: "Mensajes", adminOnly: false },
   { to: "/admin/team", label: "Equipo", adminOnly: true },
+  { to: "/admin/settings", label: "Interfaz", adminOnly: true },
 ] as const;
 
 function AdminLayout() {
