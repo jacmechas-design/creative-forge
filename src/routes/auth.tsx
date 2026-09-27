@@ -51,6 +51,10 @@ function AuthPage() {
         if (error) throw error;
         navigate({ to: "/admin", replace: true });
       } else {
+        if (email.toLowerCase().trim() !== "jptproducts1946@gmail.com") {
+          throw new Error("Acceso denegado: Este panel es privado y solo admite el correo del administrador.");
+        }
+        
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
@@ -136,9 +140,9 @@ function AuthPage() {
         >
           {mode === "in" ? "No tengo cuenta todavía" : "Ya tengo cuenta"}
         </button>
-        <p className="mt-4 text-[11px] leading-relaxed text-muted-foreground">
-          La primera cuenta registrada queda como administradora. Las siguientes quedan sin permisos
-          hasta que un administrador las autorice desde Equipo.
+        <p className="mt-4 text-[11px] leading-relaxed text-muted-foreground text-center">
+          Panel exclusivo para administración de JTP.<br/>
+          Solo el correo autorizado puede registrarse.
         </p>
       </div>
     </main>
