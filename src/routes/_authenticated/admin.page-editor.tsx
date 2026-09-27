@@ -389,150 +389,164 @@ function PageEditor() {
 }
 
 /* ────────────────────────────────────────────────
-   Section-specific property editors
+   Reusable field components (defined at top-level
+   so React keeps stable references across renders)
    ──────────────────────────────────────────────── */
-function SectionProps({ section, onUpdateProp }: { section: Section; onUpdateProp: (key: string, value: any) => void }) {
-  const p = section.props;
-
-  const TextInput = ({ label, propKey, multiline }: { label: string; propKey: string; multiline?: boolean }) => (
+function PropTextInput({ label, value, onChange, multiline }: { label: string; value: string; onChange: (v: string) => void; multiline?: boolean }) {
+  return (
     <div>
       <label className="mb-1 block text-xs font-semibold text-muted-foreground">{label}</label>
       {multiline ? (
         <textarea
           rows={3}
-          value={p[propKey] ?? ""}
-          onChange={(e) => onUpdateProp(propKey, e.target.value)}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
           className="w-full rounded-xl border border-border bg-card px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
         />
       ) : (
         <input
           type="text"
-          value={p[propKey] ?? ""}
-          onChange={(e) => onUpdateProp(propKey, e.target.value)}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
           className="w-full rounded-xl border border-border bg-card px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
         />
       )}
     </div>
   );
+}
 
-  const ColorInput = ({ label, propKey }: { label: string; propKey: string }) => (
+function PropColorInput({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
+  return (
     <label className="flex items-center gap-2 text-sm">
       <input
         type="color"
-        value={p[propKey] ?? "#000000"}
-        onChange={(e) => onUpdateProp(propKey, e.target.value)}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
         className="h-8 w-8 shrink-0 cursor-pointer rounded-lg border border-border p-0"
       />
       <span className="flex-1">{label}</span>
     </label>
   );
+}
 
-  const Toggle = ({ label, propKey }: { label: string; propKey: string }) => (
+function PropToggle({ label, checked, onChange }: { label: string; checked: boolean; onChange: (v: boolean) => void }) {
+  return (
     <label className="flex items-center gap-2 text-sm cursor-pointer">
       <div
-        onClick={() => onUpdateProp(propKey, !p[propKey])}
-        className={`relative h-5 w-9 rounded-full transition-colors ${p[propKey] ? "bg-primary" : "bg-muted-foreground/30"}`}
+        onClick={() => onChange(!checked)}
+        className={`relative h-5 w-9 rounded-full transition-colors ${checked ? "bg-primary" : "bg-muted-foreground/30"}`}
       >
-        <div className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition-transform ${p[propKey] ? "translate-x-4" : "translate-x-0.5"}`} />
+        <div className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition-transform ${checked ? "translate-x-4" : "translate-x-0.5"}`} />
       </div>
       <span>{label}</span>
     </label>
   );
+}
 
-  const SelectInput = ({ label, propKey, options }: { label: string; propKey: string; options: { value: string; label: string }[] }) => (
+function PropSelectInput({ label, value, options, onChange }: { label: string; value: string; options: { value: string; label: string }[]; onChange: (v: string) => void }) {
+  return (
     <div>
       <label className="mb-1 block text-xs font-semibold text-muted-foreground">{label}</label>
       <select
-        value={p[propKey] ?? options[0]?.value}
-        onChange={(e) => onUpdateProp(propKey, e.target.value)}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
         className="w-full rounded-xl border border-border bg-card px-3 py-2 text-sm"
       >
         {options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
       </select>
     </div>
   );
+}
 
-  const RangeInput = ({ label, propKey, min = 0, max = 100 }: { label: string; propKey: string; min?: number; max?: number }) => (
+function PropRangeInput({ label, value, min = 0, max = 100, onChange }: { label: string; value: number; min?: number; max?: number; onChange: (v: number) => void }) {
+  return (
     <div>
       <label className="mb-1 flex items-center justify-between text-xs font-semibold text-muted-foreground">
         <span>{label}</span>
-        <span className="text-[10px]">{p[propKey] ?? min}</span>
+        <span className="text-[10px]">{value}</span>
       </label>
       <input
         type="range"
         min={min}
         max={max}
-        value={p[propKey] ?? min}
-        onChange={(e) => onUpdateProp(propKey, Number(e.target.value))}
+        value={value}
+        onChange={(e) => onChange(Number(e.target.value))}
         className="w-full"
       />
     </div>
   );
+}
+
+/* ────────────────────────────────────────────────
+   Section-specific property editors
+   ──────────────────────────────────────────────── */
+function SectionProps({ section, onUpdateProp }: { section: Section; onUpdateProp: (key: string, value: any) => void }) {
+  const p = section.props;
 
   switch (section.type) {
     case "hero":
       return (
         <>
-          <TextInput label="Título principal" propKey="heading" />
-          <TextInput label="Subtítulo" propKey="subheading" multiline />
-          <TextInput label="Texto del botón CTA" propKey="ctaText" />
-          <TextInput label="Link del CTA" propKey="ctaLink" />
-          <SelectInput label="Tamaño del título" propKey="headingSize" options={[
+          <PropTextInput label="Título principal" value={p.heading ?? ""} onChange={(v) => onUpdateProp("heading", v)} />
+          <PropTextInput label="Subtítulo" value={p.subheading ?? ""} onChange={(v) => onUpdateProp("subheading", v)} multiline />
+          <PropTextInput label="Texto del botón CTA" value={p.ctaText ?? ""} onChange={(v) => onUpdateProp("ctaText", v)} />
+          <PropTextInput label="Link del CTA" value={p.ctaLink ?? ""} onChange={(v) => onUpdateProp("ctaLink", v)} />
+          <PropSelectInput label="Tamaño del título" value={p.headingSize ?? "5xl"} onChange={(v) => onUpdateProp("headingSize", v)} options={[
             { value: "3xl", label: "Mediano" },
             { value: "4xl", label: "Grande" },
             { value: "5xl", label: "Extra Grande" },
             { value: "6xl", label: "Enorme" },
           ]} />
-          <SelectInput label="Alineación" propKey="textAlign" options={[
+          <PropSelectInput label="Alineación" value={p.textAlign ?? "center"} onChange={(v) => onUpdateProp("textAlign", v)} options={[
             { value: "left", label: "Izquierda" },
             { value: "center", label: "Centro" },
             { value: "right", label: "Derecha" },
           ]} />
-          <RangeInput label="Opacidad del overlay" propKey="overlayOpacity" />
-          <ColorInput label="Color del título" propKey="headingColor" />
-          <ColorInput label="Color del subtítulo" propKey="subheadingColor" />
+          <PropRangeInput label="Opacidad del overlay" value={p.overlayOpacity ?? 60} onChange={(v) => onUpdateProp("overlayOpacity", v)} />
+          <PropColorInput label="Color del título" value={p.headingColor ?? "#ffffff"} onChange={(v) => onUpdateProp("headingColor", v)} />
+          <PropColorInput label="Color del subtítulo" value={p.subheadingColor ?? "#ffffffcc"} onChange={(v) => onUpdateProp("subheadingColor", v)} />
         </>
       );
     case "catalog":
       return (
         <>
-          <TextInput label="Título de la sección" propKey="heading" />
-          <SelectInput label="Columnas" propKey="columns" options={[
+          <PropTextInput label="Título de la sección" value={p.heading ?? ""} onChange={(v) => onUpdateProp("heading", v)} />
+          <PropSelectInput label="Columnas" value={String(p.columns ?? 4)} onChange={(v) => onUpdateProp("columns", v)} options={[
             { value: "2", label: "2 columnas" },
             { value: "3", label: "3 columnas" },
             { value: "4", label: "4 columnas" },
           ]} />
-          <SelectInput label="Estilo de tarjeta" propKey="cardStyle" options={[
+          <PropSelectInput label="Estilo de tarjeta" value={p.cardStyle ?? "rounded"} onChange={(v) => onUpdateProp("cardStyle", v)} options={[
             { value: "rounded", label: "Redondeado" },
             { value: "sharp", label: "Cuadrado" },
             { value: "pill", label: "Pastilla" },
           ]} />
-          <Toggle label="Mostrar filtros" propKey="showFilters" />
-          <Toggle label="Mostrar buscador" propKey="showSearch" />
-          <Toggle label="Mostrar ordenamiento" propKey="showSort" />
+          <PropToggle label="Mostrar filtros" checked={p.showFilters ?? true} onChange={(v) => onUpdateProp("showFilters", v)} />
+          <PropToggle label="Mostrar buscador" checked={p.showSearch ?? true} onChange={(v) => onUpdateProp("showSearch", v)} />
+          <PropToggle label="Mostrar ordenamiento" checked={p.showSort ?? true} onChange={(v) => onUpdateProp("showSort", v)} />
         </>
       );
     case "quoter":
       return (
         <>
-          <TextInput label="Kicker" propKey="kicker" />
-          <TextInput label="Título" propKey="heading" />
-          <TextInput label="Descripción" propKey="subheading" multiline />
+          <PropTextInput label="Kicker" value={p.kicker ?? ""} onChange={(v) => onUpdateProp("kicker", v)} />
+          <PropTextInput label="Título" value={p.heading ?? ""} onChange={(v) => onUpdateProp("heading", v)} />
+          <PropTextInput label="Descripción" value={p.subheading ?? ""} onChange={(v) => onUpdateProp("subheading", v)} multiline />
         </>
       );
     case "reviews":
       return (
         <>
-          <TextInput label="Título de la sección" propKey="heading" />
-          <Toggle label="Autoplay" propKey="autoplay" />
-          <Toggle label="Mostrar estrellas" propKey="showStars" />
+          <PropTextInput label="Título de la sección" value={p.heading ?? ""} onChange={(v) => onUpdateProp("heading", v)} />
+          <PropToggle label="Autoplay" checked={p.autoplay ?? true} onChange={(v) => onUpdateProp("autoplay", v)} />
+          <PropToggle label="Mostrar estrellas" checked={p.showStars ?? true} onChange={(v) => onUpdateProp("showStars", v)} />
         </>
       );
     case "services":
       return (
         <>
-          <TextInput label="Título de la sección" propKey="heading" />
-          <SelectInput label="Disposición" propKey="layout" options={[
+          <PropTextInput label="Título de la sección" value={p.heading ?? ""} onChange={(v) => onUpdateProp("heading", v)} />
+          <PropSelectInput label="Disposición" value={p.layout ?? "grid"} onChange={(v) => onUpdateProp("layout", v)} options={[
             { value: "grid", label: "Grilla" },
             { value: "list", label: "Lista" },
           ]} />
@@ -541,21 +555,22 @@ function SectionProps({ section, onUpdateProp }: { section: Section; onUpdatePro
     case "contact":
       return (
         <>
-          <TextInput label="Título de la sección" propKey="heading" />
-          <Toggle label="Mostrar teléfono" propKey="showPhone" />
-          <Toggle label="Mostrar email" propKey="showEmail" />
-          <Toggle label="Mostrar mapa" propKey="showMap" />
+          <PropTextInput label="Título de la sección" value={p.heading ?? ""} onChange={(v) => onUpdateProp("heading", v)} />
+          <PropToggle label="Mostrar teléfono" checked={p.showPhone ?? true} onChange={(v) => onUpdateProp("showPhone", v)} />
+          <PropToggle label="Mostrar email" checked={p.showEmail ?? true} onChange={(v) => onUpdateProp("showEmail", v)} />
+          <PropToggle label="Mostrar mapa" checked={p.showMap ?? false} onChange={(v) => onUpdateProp("showMap", v)} />
         </>
       );
     default:
       return (
         <>
-          <TextInput label="Título" propKey="heading" />
-          <TextInput label="Contenido" propKey="content" multiline />
+          <PropTextInput label="Título" value={p.heading ?? ""} onChange={(v) => onUpdateProp("heading", v)} />
+          <PropTextInput label="Contenido" value={p.content ?? ""} onChange={(v) => onUpdateProp("content", v)} multiline />
         </>
       );
   }
 }
+
 
 /* ────────────────────────────────────────────────
    Mini preview renderers for each section type
