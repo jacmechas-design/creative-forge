@@ -6,16 +6,16 @@ import { useAuth } from "@/hooks/useAuth";
 export const Route = createFileRoute("/auth")({
   head: () => ({
     meta: [
-      { title: "Acceso administrativo — Jac Design" },
+      { title: "Acceso administrativo — JTP" },
       {
         name: "description",
         content:
-          "Panel privado de Jac Design: gestiona catálogo, pedidos, cotizaciones y reportes del negocio.",
+          "Panel privado de JTP: gestiona catálogo, pedidos, cotizaciones y reportes del negocio.",
       },
-      { property: "og:title", content: "Acceso administrativo — Jac Design" },
+      { property: "og:title", content: "Acceso administrativo — JTP" },
       {
         property: "og:description",
-        content: "Entra al panel de gestión de Jac Design.",
+        content: "Entra al panel de gestión de JTP.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -74,7 +74,7 @@ function AuthPage() {
     <main className="grid min-h-screen place-items-center bg-background px-4 py-12">
       <div className="w-full max-w-md rounded-3xl border border-border bg-card p-7 shadow-soft">
         <Link to="/" className="text-xs font-bold uppercase tracking-widest text-amber-600">
-          ← Jac Design
+          ← JTP
         </Link>
         <h1 className="mt-4 text-2xl font-black tracking-tight">
           {mode === "in" ? "Entrar al panel" : "Crear cuenta de administración"}
