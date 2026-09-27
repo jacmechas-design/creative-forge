@@ -32,6 +32,7 @@ function AuthPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
@@ -109,7 +110,7 @@ function AuthPage() {
             className="rounded-2xl border border-input bg-background px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-amber"
           />
           <input
-            type="password"
+            type={showPassword ? "text" : "password"}
             required
             minLength={6}
             autoComplete={mode === "in" ? "current-password" : "new-password"}
@@ -119,6 +120,15 @@ function AuthPage() {
             aria-label="Contraseña"
             className="rounded-2xl border border-input bg-background px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-amber"
           />
+          <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={showPassword}
+              onChange={() => setShowPassword((v) => !v)}
+              className="h-3.5 w-3.5"
+            />
+            Mostrar contraseña
+          </label>
           {err && <p className="text-xs font-semibold text-rose-600">{err}</p>}
           {msg && <p className="text-xs font-semibold text-emerald-600">{msg}</p>}
           <button
@@ -128,6 +138,22 @@ function AuthPage() {
           >
             {busy ? "Un momento…" : mode === "in" ? "Iniciar sesión" : "Crear cuenta"}
           </button>
+          {mode === "in" && (
+            <button
+              type="button"
+              onClick={async () => {
+                if (!email) { setErr("Ingresa tu correo primero."); return; }
+                const { error } = await supabase.auth.resetPasswordForEmail(email, {
+                  redirectTo: `${window.location.origin}/auth`,
+                });
+                if (error) setErr(error.message);
+                else setMsg("Correo de restablecimiento enviado. Revisa tu bandeja de entrada.");
+              }}
+              className="text-xs text-blue-400 underline text-center mt-1"
+            >
+              ¿Olvidaste tu contraseña?
+            </button>
+          )}
         </form>
 
         <button
