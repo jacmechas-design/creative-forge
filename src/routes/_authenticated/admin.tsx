@@ -59,7 +59,7 @@ function AdminLayout() {
               JD
             </span>
             <span className="text-sm font-black tracking-tight">
-              Jac Design <span className="text-muted-foreground">· Gestión</span>
+              JTP <span className="text-muted-foreground">· Gestión</span>
             </span>
           </Link>
           <div className="ml-auto flex items-center gap-2">
