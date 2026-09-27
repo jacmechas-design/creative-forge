@@ -19,6 +19,7 @@ import { Route as AuthenticatedAdminCategoriesRouteImport } from './routes/_auth
 import { Route as AuthenticatedAdminEditorRouteImport } from './routes/_authenticated/admin.editor'
 import { Route as AuthenticatedAdminMessagesRouteImport } from './routes/_authenticated/admin.messages'
 import { Route as AuthenticatedAdminOrdersRouteImport } from './routes/_authenticated/admin.orders'
+import { Route as AuthenticatedAdminPageEditorRouteImport } from './routes/_authenticated/admin.page-editor'
 import { Route as AuthenticatedAdminProductsRouteImport } from './routes/_authenticated/admin.products'
 import { Route as AuthenticatedAdminQuotesRouteImport } from './routes/_authenticated/admin.quotes'
 import { Route as AuthenticatedAdminSettingsRouteImport } from './routes/_authenticated/admin.settings'
@@ -77,6 +78,12 @@ const AuthenticatedAdminOrdersRoute =
     path: '/orders',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const AuthenticatedAdminPageEditorRoute =
+  AuthenticatedAdminPageEditorRouteImport.update({
+    id: '/page-editor',
+    path: '/page-editor',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 const AuthenticatedAdminProductsRoute =
   AuthenticatedAdminProductsRouteImport.update({
     id: '/products',
@@ -110,6 +117,7 @@ export interface FileRoutesByFullPath {
   '/admin/editor': typeof AuthenticatedAdminEditorRoute
   '/admin/messages': typeof AuthenticatedAdminMessagesRoute
   '/admin/orders': typeof AuthenticatedAdminOrdersRoute
+  '/admin/page-editor': typeof AuthenticatedAdminPageEditorRoute
   '/admin/products': typeof AuthenticatedAdminProductsRoute
   '/admin/quotes': typeof AuthenticatedAdminQuotesRoute
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
@@ -124,6 +132,7 @@ export interface FileRoutesByTo {
   '/admin/editor': typeof AuthenticatedAdminEditorRoute
   '/admin/messages': typeof AuthenticatedAdminMessagesRoute
   '/admin/orders': typeof AuthenticatedAdminOrdersRoute
+  '/admin/page-editor': typeof AuthenticatedAdminPageEditorRoute
   '/admin/products': typeof AuthenticatedAdminProductsRoute
   '/admin/quotes': typeof AuthenticatedAdminQuotesRoute
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
@@ -141,6 +150,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/editor': typeof AuthenticatedAdminEditorRoute
   '/_authenticated/admin/messages': typeof AuthenticatedAdminMessagesRoute
   '/_authenticated/admin/orders': typeof AuthenticatedAdminOrdersRoute
+  '/_authenticated/admin/page-editor': typeof AuthenticatedAdminPageEditorRoute
   '/_authenticated/admin/products': typeof AuthenticatedAdminProductsRoute
   '/_authenticated/admin/quotes': typeof AuthenticatedAdminQuotesRoute
   '/_authenticated/admin/settings': typeof AuthenticatedAdminSettingsRoute
@@ -158,6 +168,7 @@ export interface FileRouteTypes {
     | '/admin/editor'
     | '/admin/messages'
     | '/admin/orders'
+    | '/admin/page-editor'
     | '/admin/products'
     | '/admin/quotes'
     | '/admin/settings'
@@ -172,6 +183,7 @@ export interface FileRouteTypes {
     | '/admin/editor'
     | '/admin/messages'
     | '/admin/orders'
+    | '/admin/page-editor'
     | '/admin/products'
     | '/admin/quotes'
     | '/admin/settings'
@@ -188,6 +200,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/editor'
     | '/_authenticated/admin/messages'
     | '/_authenticated/admin/orders'
+    | '/_authenticated/admin/page-editor'
     | '/_authenticated/admin/products'
     | '/_authenticated/admin/quotes'
     | '/_authenticated/admin/settings'
@@ -274,6 +287,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminOrdersRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/page-editor': {
+      id: '/_authenticated/admin/page-editor'
+      path: '/page-editor'
+      fullPath: '/admin/page-editor'
+      preLoaderRoute: typeof AuthenticatedAdminPageEditorRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/admin/products': {
       id: '/_authenticated/admin/products'
       path: '/products'
@@ -310,6 +330,7 @@ interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminEditorRoute: typeof AuthenticatedAdminEditorRoute
   AuthenticatedAdminMessagesRoute: typeof AuthenticatedAdminMessagesRoute
   AuthenticatedAdminOrdersRoute: typeof AuthenticatedAdminOrdersRoute
+  AuthenticatedAdminPageEditorRoute: typeof AuthenticatedAdminPageEditorRoute
   AuthenticatedAdminProductsRoute: typeof AuthenticatedAdminProductsRoute
   AuthenticatedAdminQuotesRoute: typeof AuthenticatedAdminQuotesRoute
   AuthenticatedAdminSettingsRoute: typeof AuthenticatedAdminSettingsRoute
@@ -322,6 +343,7 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminEditorRoute: AuthenticatedAdminEditorRoute,
   AuthenticatedAdminMessagesRoute: AuthenticatedAdminMessagesRoute,
   AuthenticatedAdminOrdersRoute: AuthenticatedAdminOrdersRoute,
+  AuthenticatedAdminPageEditorRoute: AuthenticatedAdminPageEditorRoute,
   AuthenticatedAdminProductsRoute: AuthenticatedAdminProductsRoute,
   AuthenticatedAdminQuotesRoute: AuthenticatedAdminQuotesRoute,
   AuthenticatedAdminSettingsRoute: AuthenticatedAdminSettingsRoute,
