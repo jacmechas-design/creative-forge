@@ -233,9 +233,19 @@ function JacDesign() {
     show_services: true
   });
 
+  const [globalSettings, setGlobalSettings] = useState<any>({
+    hero_title: "Transformamos tus Ideas en Realidad",
+    hero_subtitle: "Diseño, impresión 3D, corte láser y soluciones creativas para cualquier proyecto.",
+    primary_color: "#1e3a8a",
+  });
+
   useEffect(() => {
     (supabase as any).from("ui_settings").select("*").eq("id", "default").single().then(({ data }: { data: any }) => {
       if (data) setUiSettings(data as any);
+    });
+
+    (supabase as any).from("app_content").select("data").eq("id", "global_settings").single().then(({ data: row }: { data: any }) => {
+      if (row?.data) setGlobalSettings((prev: any) => ({ ...prev, ...row.data }));
     });
   }, []);
 
@@ -352,7 +362,20 @@ function JacDesign() {
   ];
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <>
+      <style>{`
+        :root, .dark {
+          --primary: ${globalSettings.primary_color};
+          --ring: ${globalSettings.primary_color};
+        }
+        .bg-gradient-warm {
+          background: linear-gradient(135deg, ${globalSettings.primary_color}, #3b82f6);
+        }
+        .text-amber-600 {
+          color: ${globalSettings.primary_color};
+        }
+      `}</style>
+      <div className="min-h-screen bg-background text-foreground">
       {/* NAV */}
       <header className="sticky top-0 z-40 border-b border-border/70 bg-background/85 backdrop-blur-md">
         <div className="mx-auto grid max-w-7xl grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 py-3 lg:px-8">
@@ -444,11 +467,10 @@ function JacDesign() {
                 {t("heroBadge")}
               </span>
               <h1 className="mb-5 text-[1.9rem] font-black leading-[1.1] tracking-tight [overflow-wrap:anywhere] sm:text-5xl lg:text-6xl">
-                {t("heroTitle1")}{" "}
-                <span className="bg-gradient-warm bg-clip-text text-transparent">{t("heroTitle2")}</span>
+                {globalSettings.hero_title}
               </h1>
               <p className="mb-7 max-w-xl text-base leading-relaxed text-muted-foreground sm:text-lg">
-                {t("heroText")}
+                {globalSettings.hero_subtitle}
               </p>
               <div className="mb-8 flex flex-wrap gap-3">
                 <a
@@ -1104,6 +1126,7 @@ function JacDesign() {
         ))}
       </div>
     </div>
+    </>
   );
 }
 
