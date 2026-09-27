@@ -15,6 +15,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as ApiDesignImageRouteImport } from './routes/api/design-image'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
+import { Route as AuthenticatedAdminCategoriesRouteImport } from './routes/_authenticated/admin.categories'
 import { Route as AuthenticatedAdminEditorRouteImport } from './routes/_authenticated/admin.editor'
 import { Route as AuthenticatedAdminMessagesRouteImport } from './routes/_authenticated/admin.messages'
 import { Route as AuthenticatedAdminOrdersRouteImport } from './routes/_authenticated/admin.orders'
@@ -52,6 +53,12 @@ const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthenticatedAdminRoute,
 } as any)
+const AuthenticatedAdminCategoriesRoute =
+  AuthenticatedAdminCategoriesRouteImport.update({
+    id: '/categories',
+    path: '/categories',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 const AuthenticatedAdminEditorRoute =
   AuthenticatedAdminEditorRouteImport.update({
     id: '/editor',
@@ -99,6 +106,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/admin': typeof AuthenticatedAdminRouteWithChildren
   '/api/design-image': typeof ApiDesignImageRoute
+  '/admin/categories': typeof AuthenticatedAdminCategoriesRoute
   '/admin/editor': typeof AuthenticatedAdminEditorRoute
   '/admin/messages': typeof AuthenticatedAdminMessagesRoute
   '/admin/orders': typeof AuthenticatedAdminOrdersRoute
@@ -112,6 +120,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/api/design-image': typeof ApiDesignImageRoute
+  '/admin/categories': typeof AuthenticatedAdminCategoriesRoute
   '/admin/editor': typeof AuthenticatedAdminEditorRoute
   '/admin/messages': typeof AuthenticatedAdminMessagesRoute
   '/admin/orders': typeof AuthenticatedAdminOrdersRoute
@@ -128,6 +137,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
   '/api/design-image': typeof ApiDesignImageRoute
+  '/_authenticated/admin/categories': typeof AuthenticatedAdminCategoriesRoute
   '/_authenticated/admin/editor': typeof AuthenticatedAdminEditorRoute
   '/_authenticated/admin/messages': typeof AuthenticatedAdminMessagesRoute
   '/_authenticated/admin/orders': typeof AuthenticatedAdminOrdersRoute
@@ -144,6 +154,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/admin'
     | '/api/design-image'
+    | '/admin/categories'
     | '/admin/editor'
     | '/admin/messages'
     | '/admin/orders'
@@ -157,6 +168,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/api/design-image'
+    | '/admin/categories'
     | '/admin/editor'
     | '/admin/messages'
     | '/admin/orders'
@@ -172,6 +184,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/_authenticated/admin'
     | '/api/design-image'
+    | '/_authenticated/admin/categories'
     | '/_authenticated/admin/editor'
     | '/_authenticated/admin/messages'
     | '/_authenticated/admin/orders'
@@ -233,6 +246,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminIndexRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/categories': {
+      id: '/_authenticated/admin/categories'
+      path: '/categories'
+      fullPath: '/admin/categories'
+      preLoaderRoute: typeof AuthenticatedAdminCategoriesRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/admin/editor': {
       id: '/_authenticated/admin/editor'
       path: '/editor'
@@ -286,6 +306,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedAdminRouteChildren {
+  AuthenticatedAdminCategoriesRoute: typeof AuthenticatedAdminCategoriesRoute
   AuthenticatedAdminEditorRoute: typeof AuthenticatedAdminEditorRoute
   AuthenticatedAdminMessagesRoute: typeof AuthenticatedAdminMessagesRoute
   AuthenticatedAdminOrdersRoute: typeof AuthenticatedAdminOrdersRoute
@@ -297,6 +318,7 @@ interface AuthenticatedAdminRouteChildren {
 }
 
 const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
+  AuthenticatedAdminCategoriesRoute: AuthenticatedAdminCategoriesRoute,
   AuthenticatedAdminEditorRoute: AuthenticatedAdminEditorRoute,
   AuthenticatedAdminMessagesRoute: AuthenticatedAdminMessagesRoute,
   AuthenticatedAdminOrdersRoute: AuthenticatedAdminOrdersRoute,
@@ -330,3 +352,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
