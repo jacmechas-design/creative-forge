@@ -37,12 +37,14 @@ export function useAuth() {
   }, [uid]);
 
   const user: User | null = session?.user ?? null;
+  const isOwner = user?.email?.toLowerCase() === "jptproducts1946@gmail.com";
+
   return {
     session,
     user,
     roles,
-    isAdmin: roles.includes("admin"),
-    isStaff: roles.length > 0,
+    isAdmin: isOwner || roles.includes("admin"),
+    isStaff: isOwner || roles.length > 0,
     loading,
   };
 }
