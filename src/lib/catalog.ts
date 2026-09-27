@@ -1,41 +1,107 @@
-import { supabase } from '@/integrations/supabase/client';
-import { productSchema, validateImage, type Product, type ProductInput } from './catalog-model';
+import { PRODUCTS, type Cat, type LeadKey, type Product } from "@/data/products";
 
-export function catalogError(error: unknown): string {
-  const detail = error as { code?: string; message?: string };
-  if (detail?.code === '23505') return 'Ya existe un producto con ese SKU.';
-  if (['42P01', 'PGRST205'].includes(detail?.code ?? '')) return 'El catalogo no esta disponible. Contacta al administrador.';
-  return detail?.message || 'No se pudo completar la operacion. Intenta nuevamente.';
+/** slug -> bundled image imported at build time */
+export const IMAGE_MAP: Record<string, string> = Object.fromEntries(
+  PRODUCTS.map((p) => [p.id, p.img])
+);
+
+export interface ProductRow {
+  id: string;
+  slug: string;
+  cat: string;
+  price_cad: number | string;
+  image_key: string | null;
+  image_url: string | null;
+  popular: boolean;
+  published: boolean;
+  rating: number | string;
+  review_count: number;
+  dimensions: string | null;
+  lead: string;
+  sort_order: number;
+  stock: number | null;
+  name_en: string;
+  name_fr: string | null;
+  name_es: string | null;
+  tag_en: string | null;
+  tag_fr: string | null;
+  tag_es: string | null;
+  desc_en: string | null;
+  desc_fr: string | null;
+  desc_es: string | null;
+  material_en: string | null;
+  material_fr: string | null;
+  material_es: string | null;
+  created_at?: string;
+  updated_at?: string;
 }
 
-export async function listProducts() {
-  const { data, error } = await supabase.from('products').select('*').order('updated_at', { ascending: false }).limit(1000);
-  if (error) throw error;
-  return data;
+export type ShopProduct = Product & {
+  rowId?: string;
+  published: boolean;
+  sortOrder: number;
+  stock: number | null;
+};
+
+const tri = (en: string | null, fr: string | null, es: string | null) => ({
+  en: en ?? "",
+  fr: fr ?? en ?? "",
+  es: es ?? en ?? "",
+});
+
+export function rowToProduct(r: ProductRow): ShopProduct {
+  return {
+    rowId: r.id,
+    id: r.slug,
+    cat: r.cat as Cat,
+    price: Number(r.price_cad),
+    img: (r.image_key ? IMAGE_MAP[r.image_key] : undefined) ?? r.image_url ?? IMAGE_MAP[r.slug] ?? "",
+    popular: r.popular,
+    published: r.published,
+    sortOrder: r.sort_order ?? 0,
+    stock: r.stock,
+    rating: Number(r.rating),
+    reviewCount: r.review_count,
+    dimensions: r.dimensions ?? "",
+    lead: (r.lead as LeadKey) ?? "d23",
+    name: tri(r.name_en, r.name_fr, r.name_es),
+    tag: tri(r.tag_en, r.tag_fr, r.tag_es),
+    desc: tri(r.desc_en, r.desc_fr, r.desc_es),
+    material: tri(r.material_en, r.material_fr, r.material_es),
+  };
 }
 
-export async function saveProduct(input: ProductInput, existing?: Product) {
-  const value = productSchema.parse({ ...input, stock: input.kind === 'stock' ? input.stock : 0 });
-  const query = existing
-    ? supabase.from('products').update(value).eq('id', existing.id).eq('version', existing.version)
-    : supabase.from('products').insert(value);
-  const { data, error } = await query.select().maybeSingle();
-  if (error) throw error;
-  if (!data) throw new Error('Otro usuario modifico este producto. Recarga el catalogo antes de guardar.');
-  return data;
-}
+/** Rows used by the "import starter catalogue" action in the admin panel. */
+export const seedRows = () =>
+  PRODUCTS.map((p, i) => ({
+    slug: p.id,
+    cat: p.cat,
+    price_cad: p.price,
+    image_key: p.id,
+    popular: p.popular,
+    published: true,
+    rating: p.rating,
+    review_count: p.reviewCount,
+    dimensions: p.dimensions,
+    lead: p.lead,
+    sort_order: i * 10,
+    name_en: p.name.en,
+    name_fr: p.name.fr,
+    name_es: p.name.es,
+    tag_en: p.tag.en,
+    tag_fr: p.tag.fr,
+    tag_es: p.tag.es,
+    desc_en: p.desc.en,
+    desc_fr: p.desc.fr,
+    desc_es: p.desc.es,
+    material_en: p.material.en,
+    material_fr: p.material.fr,
+    material_es: p.material.es,
+  }));
 
-export const imageUrl = (path: string) => supabase.storage.from('product-media').getPublicUrl(path).data.publicUrl;
-
-export async function uploadImage(file: File, userId: string) {
-  validateImage(file);
-  const bitmap = await createImageBitmap(file);
-  const valid = bitmap.width >= 100 && bitmap.height >= 100 && bitmap.width <= 12000 && bitmap.height <= 12000;
-  bitmap.close();
-  if (!valid) throw new Error('Las dimensiones deben estar entre 100 y 12000 pixeles por lado.');
-  const extension = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' }[file.type];
-  const path = `${userId}/${crypto.randomUUID()}.${extension}`;
-  const { error } = await supabase.storage.from('product-media').upload(path, file, { contentType: file.type, upsert: false });
-  if (error) throw error;
-  return { path, alt: file.name.replace(/\.[^.]+$/, '').slice(0, 300) };
-}
+export const STATIC_PRODUCTS: ShopProduct[] = PRODUCTS.map((p, i) => ({
+  ...p,
+  published: true,
+  sortOrder: i * 10,
+  stock: null,
+}));

@@ -4,26 +4,45 @@ import { supabase } from "@/integrations/supabase/client";
 
 export function useAuth() {
   const [session, setSession] = useState<Session | null>(null);
-  const [user, setUser] = useState<User | null>(null);
+  const [roles, setRoles] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, nextSession) => {
-      setSession(nextSession);
-      setUser(nextSession?.user ?? null);
+    const { data } = supabase.auth.onAuthStateChange((_event, s) => setSession(s));
+    supabase.auth.getSession().then(({ data: d }) => {
+      setSession(d.session);
       setLoading(false);
     });
-
-    supabase.auth.getSession().then(({ data: { session: current } }) => {
-      setSession(current);
-      setUser(current?.user ?? null);
-      setLoading(false);
-    });
-
-    return () => subscription.unsubscribe();
+    return () => data.subscription.unsubscribe();
   }, []);
 
-  const signOut = () => supabase.auth.signOut();
+  const uid = session?.user?.id;
 
-  return { session, user, loading, signOut };
+  useEffect(() => {
+    if (!uid) {
+      setRoles([]);
+      return;
+    }
+    let alive = true;
+    supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", uid)
+      .then(({ data }) => {
+        if (alive) setRoles(((data ?? []) as { role: string }[]).map((r) => r.role));
+      });
+    return () => {
+      alive = false;
+    };
+  }, [uid]);
+
+  const user: User | null = session?.user ?? null;
+  return {
+    session,
+    user,
+    roles,
+    isAdmin: roles.includes("admin"),
+    isStaff: roles.length > 0,
+    loading,
+  };
 }

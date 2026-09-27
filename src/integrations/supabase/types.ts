@@ -1,5 +1,3 @@
-import type { Product, ProductInput, InventoryMovement } from '../../lib/catalog-model';
-
 export type Json =
   | string
   | number
@@ -16,83 +14,320 @@ export type Database = {
   }
   public: {
     Tables: {
+      messages: {
+        Row: {
+          body: string
+          created_at: string
+          email: string
+          id: string
+          lang: string
+          name: string
+          phone: string | null
+          status: Database["public"]["Enums"]["request_status"]
+          updated_at: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          email: string
+          id?: string
+          lang?: string
+          name: string
+          phone?: string | null
+          status?: Database["public"]["Enums"]["request_status"]
+          updated_at?: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          email?: string
+          id?: string
+          lang?: string
+          name?: string
+          phone?: string | null
+          status?: Database["public"]["Enums"]["request_status"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      order_items: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          order_id: string
+          product_id: string | null
+          product_slug: string | null
+          qty: number
+          unit_price_cad: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          order_id: string
+          product_id?: string | null
+          product_slug?: string | null
+          qty?: number
+          unit_price_cad?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          order_id?: string
+          product_id?: string | null
+          product_slug?: string | null
+          qty?: number
+          unit_price_cad?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orders: {
+        Row: {
+          code: string
+          created_at: string
+          customer_email: string
+          customer_name: string
+          customer_phone: string | null
+          id: string
+          lang: string
+          notes: string | null
+          status: Database["public"]["Enums"]["order_status"]
+          total_cad: number
+          updated_at: string
+        }
+        Insert: {
+          code?: string
+          created_at?: string
+          customer_email: string
+          customer_name: string
+          customer_phone?: string | null
+          id?: string
+          lang?: string
+          notes?: string | null
+          status?: Database["public"]["Enums"]["order_status"]
+          total_cad?: number
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          customer_email?: string
+          customer_name?: string
+          customer_phone?: string | null
+          id?: string
+          lang?: string
+          notes?: string | null
+          status?: Database["public"]["Enums"]["order_status"]
+          total_cad?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       products: {
-        Row: Product
-        Insert: ProductInput & { id?: string }
-        Update: Partial<ProductInput>
-        Relationships: []
-      }
-      store_roles: {
-        Row: { user_id: string; role: 'admin' | 'operator' }
-        Insert: { user_id: string; role: 'admin' | 'operator' }
-        Update: { role?: 'admin' | 'operator' }
-        Relationships: []
-      }
-      inventory_movements: {
-        Row: InventoryMovement
-        Insert: never
-        Update: never
+        Row: {
+          cat: string
+          created_at: string
+          desc_en: string | null
+          desc_es: string | null
+          desc_fr: string | null
+          dimensions: string | null
+          id: string
+          image_key: string | null
+          image_url: string | null
+          lead: string
+          material_en: string | null
+          material_es: string | null
+          material_fr: string | null
+          name_en: string
+          name_es: string | null
+          name_fr: string | null
+          popular: boolean
+          price_cad: number
+          published: boolean
+          rating: number
+          review_count: number
+          slug: string
+          sort_order: number
+          stock: number | null
+          tag_en: string | null
+          tag_es: string | null
+          tag_fr: string | null
+          updated_at: string
+        }
+        Insert: {
+          cat: string
+          created_at?: string
+          desc_en?: string | null
+          desc_es?: string | null
+          desc_fr?: string | null
+          dimensions?: string | null
+          id?: string
+          image_key?: string | null
+          image_url?: string | null
+          lead?: string
+          material_en?: string | null
+          material_es?: string | null
+          material_fr?: string | null
+          name_en: string
+          name_es?: string | null
+          name_fr?: string | null
+          popular?: boolean
+          price_cad?: number
+          published?: boolean
+          rating?: number
+          review_count?: number
+          slug: string
+          sort_order?: number
+          stock?: number | null
+          tag_en?: string | null
+          tag_es?: string | null
+          tag_fr?: string | null
+          updated_at?: string
+        }
+        Update: {
+          cat?: string
+          created_at?: string
+          desc_en?: string | null
+          desc_es?: string | null
+          desc_fr?: string | null
+          dimensions?: string | null
+          id?: string
+          image_key?: string | null
+          image_url?: string | null
+          lead?: string
+          material_en?: string | null
+          material_es?: string | null
+          material_fr?: string | null
+          name_en?: string
+          name_es?: string | null
+          name_fr?: string | null
+          popular?: boolean
+          price_cad?: number
+          published?: boolean
+          rating?: number
+          review_count?: number
+          slug?: string
+          sort_order?: number
+          stock?: number | null
+          tag_en?: string | null
+          tag_es?: string | null
+          tag_fr?: string | null
+          updated_at?: string
+        }
         Relationships: []
       }
       profiles: {
         Row: {
-          company: string | null
           created_at: string
+          email: string | null
           full_name: string | null
           id: string
+          updated_at: string
         }
         Insert: {
-          company?: string | null
           created_at?: string
+          email?: string | null
           full_name?: string | null
           id: string
+          updated_at?: string
         }
         Update: {
-          company?: string | null
           created_at?: string
+          email?: string | null
           full_name?: string | null
           id?: string
+          updated_at?: string
         }
         Relationships: []
       }
       quotes: {
         Row: {
+          color: string | null
           created_at: string
-          estimated_price: number
+          customer_email: string | null
+          customer_name: string | null
+          estimate_cad: number | null
           file_name: string | null
-          file_path: string | null
           id: string
-          material: string
-          quantity: number
-          service: string
-          status: string
+          infill: string | null
+          material: string | null
+          notes: string | null
+          qty: number
+          quality: string | null
+          status: Database["public"]["Enums"]["request_status"]
           updated_at: string
+          volume_cm3: number | null
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          customer_email?: string | null
+          customer_name?: string | null
+          estimate_cad?: number | null
+          file_name?: string | null
+          id?: string
+          infill?: string | null
+          material?: string | null
+          notes?: string | null
+          qty?: number
+          quality?: string | null
+          status?: Database["public"]["Enums"]["request_status"]
+          updated_at?: string
+          volume_cm3?: number | null
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          customer_email?: string | null
+          customer_name?: string | null
+          estimate_cad?: number | null
+          file_name?: string | null
+          id?: string
+          infill?: string | null
+          material?: string | null
+          notes?: string | null
+          qty?: number
+          quality?: string | null
+          status?: Database["public"]["Enums"]["request_status"]
+          updated_at?: string
+          volume_cm3?: number | null
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
           user_id: string
         }
         Insert: {
           created_at?: string
-          estimated_price: number
-          file_name?: string | null
-          file_path?: string | null
           id?: string
-          material: string
-          quantity?: number
-          service: string
-          status?: string
-          updated_at?: string
+          role: Database["public"]["Enums"]["app_role"]
           user_id: string
         }
         Update: {
           created_at?: string
-          estimated_price?: number
-          file_name?: string | null
-          file_path?: string | null
           id?: string
-          material?: string
-          quantity?: number
-          service?: string
-          status?: string
-          updated_at?: string
+          role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
         }
         Relationships: []
@@ -102,10 +337,25 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      is_staff: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "staff"
+      order_status:
+        | "nuevo"
+        | "confirmado"
+        | "produccion"
+        | "listo"
+        | "entregado"
+        | "cancelado"
+      request_status: "nuevo" | "en_proceso" | "cerrado"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -232,6 +482,17 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "staff"],
+      order_status: [
+        "nuevo",
+        "confirmado",
+        "produccion",
+        "listo",
+        "entregado",
+        "cancelado",
+      ],
+      request_status: ["nuevo", "en_proceso", "cerrado"],
+    },
   },
 } as const
