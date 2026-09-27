@@ -393,21 +393,40 @@ function PageEditor() {
    so React keeps stable references across renders)
    ──────────────────────────────────────────────── */
 function PropTextInput({ label, value, onChange, multiline }: { label: string; value: string; onChange: (v: string) => void; multiline?: boolean }) {
+  const [localValue, setLocalValue] = useState(value);
+
+  // Sync from parent when it changes externally (e.g. switching sections)
+  useEffect(() => {
+    setLocalValue(value);
+  }, [value]);
+
+  // Push changes to parent after a short debounce to avoid re-rendering the whole page on every keystroke
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (localValue !== value) {
+        onChange(localValue);
+      }
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [localValue, value, onChange]);
+
   return (
     <div>
       <label className="mb-1 block text-xs font-semibold text-muted-foreground">{label}</label>
       {multiline ? (
         <textarea
           rows={3}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
+          value={localValue}
+          onChange={(e) => setLocalValue(e.target.value)}
+          onBlur={() => { if (localValue !== value) onChange(localValue); }}
           className="w-full rounded-xl border border-border bg-card px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
         />
       ) : (
         <input
           type="text"
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
+          value={localValue}
+          onChange={(e) => setLocalValue(e.target.value)}
+          onBlur={() => { if (localValue !== value) onChange(localValue); }}
           className="w-full rounded-xl border border-border bg-card px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
         />
       )}
