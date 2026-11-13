@@ -8,3 +8,5 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
+
+- Keep manufacturing pricing in a pure browser-safe calculation module with numeric tests; the staff calculator uses batch totals and CAD to separate internal costs from customer checkout pricing.

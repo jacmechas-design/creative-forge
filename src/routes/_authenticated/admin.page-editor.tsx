@@ -189,7 +189,11 @@ function PageEditor() {
       const target = idx + dir;
       if (target < 0 || target >= c.sections.length) return c;
       const arr = [...c.sections];
-      [arr[idx], arr[target]] = [arr[target], arr[idx]];
+      const current = arr[idx];
+      const destination = arr[target];
+      if (!current || !destination) return c;
+      arr[idx] = destination;
+      arr[target] = current;
       return { ...c, sections: arr };
     });
   }, [update]);

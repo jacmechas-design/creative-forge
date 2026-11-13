@@ -10,6 +10,7 @@ export const Route = createFileRoute("/_authenticated/admin")({
 const NAV = [
   { to: "/admin", label: "Panel", exact: true, adminOnly: true },
   { to: "/admin/products", label: "Catálogo", adminOnly: false },
+  { to: "/admin/calculator", label: "Calculadora de precios", adminOnly: false },
   { to: "/admin/orders", label: "Pedidos", adminOnly: false },
   { to: "/admin/quotes", label: "Cotizaciones", adminOnly: false },
   { to: "/admin/messages", label: "Mensajes", adminOnly: false },
