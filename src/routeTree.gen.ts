@@ -15,6 +15,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as ApiDesignImageRouteImport } from './routes/api/design-image'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
+import { Route as AuthenticatedAdminCalculatorRouteImport } from './routes/_authenticated/admin.calculator'
 import { Route as AuthenticatedAdminCategoriesRouteImport } from './routes/_authenticated/admin.categories'
 import { Route as AuthenticatedAdminEditorRouteImport } from './routes/_authenticated/admin.editor'
 import { Route as AuthenticatedAdminMessagesRouteImport } from './routes/_authenticated/admin.messages'
@@ -54,6 +55,12 @@ const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthenticatedAdminRoute,
 } as any)
+const AuthenticatedAdminCalculatorRoute =
+  AuthenticatedAdminCalculatorRouteImport.update({
+    id: '/calculator',
+    path: '/calculator',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 const AuthenticatedAdminCategoriesRoute =
   AuthenticatedAdminCategoriesRouteImport.update({
     id: '/categories',
@@ -113,6 +120,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/admin': typeof AuthenticatedAdminRouteWithChildren
   '/api/design-image': typeof ApiDesignImageRoute
+  '/admin/calculator': typeof AuthenticatedAdminCalculatorRoute
   '/admin/categories': typeof AuthenticatedAdminCategoriesRoute
   '/admin/editor': typeof AuthenticatedAdminEditorRoute
   '/admin/messages': typeof AuthenticatedAdminMessagesRoute
@@ -128,6 +136,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/api/design-image': typeof ApiDesignImageRoute
+  '/admin/calculator': typeof AuthenticatedAdminCalculatorRoute
   '/admin/categories': typeof AuthenticatedAdminCategoriesRoute
   '/admin/editor': typeof AuthenticatedAdminEditorRoute
   '/admin/messages': typeof AuthenticatedAdminMessagesRoute
@@ -146,6 +155,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
   '/api/design-image': typeof ApiDesignImageRoute
+  '/_authenticated/admin/calculator': typeof AuthenticatedAdminCalculatorRoute
   '/_authenticated/admin/categories': typeof AuthenticatedAdminCategoriesRoute
   '/_authenticated/admin/editor': typeof AuthenticatedAdminEditorRoute
   '/_authenticated/admin/messages': typeof AuthenticatedAdminMessagesRoute
@@ -164,6 +174,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/admin'
     | '/api/design-image'
+    | '/admin/calculator'
     | '/admin/categories'
     | '/admin/editor'
     | '/admin/messages'
@@ -179,6 +190,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/api/design-image'
+    | '/admin/calculator'
     | '/admin/categories'
     | '/admin/editor'
     | '/admin/messages'
@@ -196,6 +208,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/_authenticated/admin'
     | '/api/design-image'
+    | '/_authenticated/admin/calculator'
     | '/_authenticated/admin/categories'
     | '/_authenticated/admin/editor'
     | '/_authenticated/admin/messages'
@@ -257,6 +270,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/admin/'
       preLoaderRoute: typeof AuthenticatedAdminIndexRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/calculator': {
+      id: '/_authenticated/admin/calculator'
+      path: '/calculator'
+      fullPath: '/admin/calculator'
+      preLoaderRoute: typeof AuthenticatedAdminCalculatorRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
     '/_authenticated/admin/categories': {
@@ -326,6 +346,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedAdminRouteChildren {
+  AuthenticatedAdminCalculatorRoute: typeof AuthenticatedAdminCalculatorRoute
   AuthenticatedAdminCategoriesRoute: typeof AuthenticatedAdminCategoriesRoute
   AuthenticatedAdminEditorRoute: typeof AuthenticatedAdminEditorRoute
   AuthenticatedAdminMessagesRoute: typeof AuthenticatedAdminMessagesRoute
@@ -339,6 +360,7 @@ interface AuthenticatedAdminRouteChildren {
 }
 
 const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
+  AuthenticatedAdminCalculatorRoute: AuthenticatedAdminCalculatorRoute,
   AuthenticatedAdminCategoriesRoute: AuthenticatedAdminCategoriesRoute,
   AuthenticatedAdminEditorRoute: AuthenticatedAdminEditorRoute,
   AuthenticatedAdminMessagesRoute: AuthenticatedAdminMessagesRoute,
