@@ -6,6 +6,14 @@ import { useAuth } from "@/hooks/useAuth";
 import { Card, Empty, Pill, SearchInput, btnGhost, cadExact, dateShort, downloadCsv, inputCls } from "@/components/admin/kit";
 
 export const Route = createFileRoute("/_authenticated/admin/quotes")({
+  head: () => ({ meta: [
+    { title: "Cotizaciones | JTP" },
+    { name: "description", content: "Cotizaciones del espacio de gestión de JTP." },
+    { property: "og:title", content: "Cotizaciones | JTP" },
+    { property: "og:description", content: "Cotizaciones del espacio de gestión de JTP." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   component: QuotesAdmin,
 });
 

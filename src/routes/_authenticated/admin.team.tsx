@@ -6,6 +6,14 @@ import { useAuth } from "@/hooks/useAuth";
 import { Card, Empty, Pill, dateShort } from "@/components/admin/kit";
 
 export const Route = createFileRoute("/_authenticated/admin/team")({
+  head: () => ({ meta: [
+    { title: "Equipo y permisos | JTP" },
+    { name: "description", content: "Equipo y permisos del espacio de gestión de JTP." },
+    { property: "og:title", content: "Equipo y permisos | JTP" },
+    { property: "og:description", content: "Equipo y permisos del espacio de gestión de JTP." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   component: TeamAdmin,
 });
 

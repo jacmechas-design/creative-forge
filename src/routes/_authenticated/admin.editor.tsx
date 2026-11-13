@@ -4,6 +4,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/admin/editor")({
+  head: () => ({ meta: [
+    { title: "Editor web | JTP" },
+    { name: "description", content: "Editor web del espacio de gestión de JTP." },
+    { property: "og:title", content: "Editor web | JTP" },
+    { property: "og:description", content: "Editor web del espacio de gestión de JTP." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   component: AdminEditor,
 });
 

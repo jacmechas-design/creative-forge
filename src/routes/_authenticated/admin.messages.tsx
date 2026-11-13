@@ -6,6 +6,14 @@ import { useAuth } from "@/hooks/useAuth";
 import { Card, Empty, Pill, SearchInput, btnGhost, dateShort, downloadCsv, inputCls } from "@/components/admin/kit";
 
 export const Route = createFileRoute("/_authenticated/admin/messages")({
+  head: () => ({ meta: [
+    { title: "Mensajes | JTP" },
+    { name: "description", content: "Mensajes del espacio de gestión de JTP." },
+    { property: "og:title", content: "Mensajes | JTP" },
+    { property: "og:description", content: "Mensajes del espacio de gestión de JTP." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   component: MessagesAdmin,
 });
 

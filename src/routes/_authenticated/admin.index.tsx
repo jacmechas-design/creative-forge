@@ -7,6 +7,14 @@ import { useAdminCatalog } from "@/hooks/useCatalog";
 import { Card, Empty, Pill, Stat, btnGhost, cad, dateShort, downloadCsv, inputCls } from "@/components/admin/kit";
 
 export const Route = createFileRoute("/_authenticated/admin/")({
+  head: () => ({ meta: [
+    { title: "Panel de gestión | JTP" },
+    { name: "description", content: "Panel de gestión del espacio de gestión de JTP." },
+    { property: "og:title", content: "Panel de gestión | JTP" },
+    { property: "og:description", content: "Panel de gestión del espacio de gestión de JTP." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   component: Dashboard,
 });
 
