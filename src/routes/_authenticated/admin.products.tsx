@@ -11,6 +11,14 @@ import { translateProductCopy } from "@/lib/translate.functions";
 import { Card, Empty, Field, Pill, btnGhost, btnPrimary, cadExact, downloadCsv, inputCls } from "@/components/admin/kit";
 
 export const Route = createFileRoute("/_authenticated/admin/products")({
+  head: () => ({ meta: [
+    { title: "Catálogo de productos | JTP" },
+    { name: "description", content: "Catálogo de productos del espacio de gestión de JTP." },
+    { property: "og:title", content: "Catálogo de productos | JTP" },
+    { property: "og:description", content: "Catálogo de productos del espacio de gestión de JTP." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   validateSearch: (search: Record<string, unknown>): { edit?: string | undefined } => ({
     edit: typeof search['edit'] === "string" ? (search['edit'] as string) : undefined,
   }),

@@ -11,6 +11,14 @@ import {
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/admin/page-editor")({
+  head: () => ({ meta: [
+    { title: "Editor visual | JTP" },
+    { name: "description", content: "Editor visual del espacio de gestión de JTP." },
+    { property: "og:title", content: "Editor visual | JTP" },
+    { property: "og:description", content: "Editor visual del espacio de gestión de JTP." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   component: PageEditor,
 });
 
@@ -152,8 +160,8 @@ function PageEditor() {
       await (supabase as any).from("app_content").upsert({
         id: "global_settings",
         data: {
-          hero_title: config.sections.find((s) => s.id === "hero")?.props.heading ?? "",
-          hero_subtitle: config.sections.find((s) => s.id === "hero")?.props.subheading ?? "",
+          hero_title: config.sections.find((s) => s.id === "hero")?.props['heading'] ?? "",
+          hero_subtitle: config.sections.find((s) => s.id === "hero")?.props['subheading'] ?? "",
           primary_color: config.global.primaryColor,
         },
       });
@@ -189,7 +197,11 @@ function PageEditor() {
       const target = idx + dir;
       if (target < 0 || target >= c.sections.length) return c;
       const arr = [...c.sections];
-      [arr[idx], arr[target]] = [arr[target], arr[idx]];
+      const current = arr[idx];
+      const destination = arr[target];
+      if (!current || !destination) return c;
+      arr[idx] = destination;
+      arr[target] = current;
       return { ...c, sections: arr };
     });
   }, [update]);
@@ -506,66 +518,66 @@ function SectionProps({ section, onUpdateProp }: { section: Section; onUpdatePro
     case "hero":
       return (
         <>
-          <PropTextInput label="Título principal" value={p.heading ?? ""} onChange={(v) => onUpdateProp("heading", v)} />
-          <PropTextInput label="Subtítulo" value={p.subheading ?? ""} onChange={(v) => onUpdateProp("subheading", v)} multiline />
-          <PropTextInput label="Texto del botón CTA" value={p.ctaText ?? ""} onChange={(v) => onUpdateProp("ctaText", v)} />
-          <PropTextInput label="Link del CTA" value={p.ctaLink ?? ""} onChange={(v) => onUpdateProp("ctaLink", v)} />
-          <PropSelectInput label="Tamaño del título" value={p.headingSize ?? "5xl"} onChange={(v) => onUpdateProp("headingSize", v)} options={[
+          <PropTextInput label="Título principal" value={p['heading'] ?? ""} onChange={(v) => onUpdateProp("heading", v)} />
+          <PropTextInput label="Subtítulo" value={p['subheading'] ?? ""} onChange={(v) => onUpdateProp("subheading", v)} multiline />
+          <PropTextInput label="Texto del botón CTA" value={p['ctaText'] ?? ""} onChange={(v) => onUpdateProp("ctaText", v)} />
+          <PropTextInput label="Link del CTA" value={p['ctaLink'] ?? ""} onChange={(v) => onUpdateProp("ctaLink", v)} />
+          <PropSelectInput label="Tamaño del título" value={p['headingSize'] ?? "5xl"} onChange={(v) => onUpdateProp("headingSize", v)} options={[
             { value: "3xl", label: "Mediano" },
             { value: "4xl", label: "Grande" },
             { value: "5xl", label: "Extra Grande" },
             { value: "6xl", label: "Enorme" },
           ]} />
-          <PropSelectInput label="Alineación" value={p.textAlign ?? "center"} onChange={(v) => onUpdateProp("textAlign", v)} options={[
+          <PropSelectInput label="Alineación" value={p['textAlign'] ?? "center"} onChange={(v) => onUpdateProp("textAlign", v)} options={[
             { value: "left", label: "Izquierda" },
             { value: "center", label: "Centro" },
             { value: "right", label: "Derecha" },
           ]} />
-          <PropRangeInput label="Opacidad del overlay" value={p.overlayOpacity ?? 60} onChange={(v) => onUpdateProp("overlayOpacity", v)} />
-          <PropColorInput label="Color del título" value={p.headingColor ?? "#ffffff"} onChange={(v) => onUpdateProp("headingColor", v)} />
-          <PropColorInput label="Color del subtítulo" value={p.subheadingColor ?? "#ffffffcc"} onChange={(v) => onUpdateProp("subheadingColor", v)} />
+          <PropRangeInput label="Opacidad del overlay" value={p['overlayOpacity'] ?? 60} onChange={(v) => onUpdateProp("overlayOpacity", v)} />
+          <PropColorInput label="Color del título" value={p['headingColor'] ?? "#ffffff"} onChange={(v) => onUpdateProp("headingColor", v)} />
+          <PropColorInput label="Color del subtítulo" value={p['subheadingColor'] ?? "#ffffffcc"} onChange={(v) => onUpdateProp("subheadingColor", v)} />
         </>
       );
     case "catalog":
       return (
         <>
-          <PropTextInput label="Título de la sección" value={p.heading ?? ""} onChange={(v) => onUpdateProp("heading", v)} />
-          <PropSelectInput label="Columnas" value={String(p.columns ?? 4)} onChange={(v) => onUpdateProp("columns", v)} options={[
+          <PropTextInput label="Título de la sección" value={p['heading'] ?? ""} onChange={(v) => onUpdateProp("heading", v)} />
+          <PropSelectInput label="Columnas" value={String(p['columns'] ?? 4)} onChange={(v) => onUpdateProp("columns", v)} options={[
             { value: "2", label: "2 columnas" },
             { value: "3", label: "3 columnas" },
             { value: "4", label: "4 columnas" },
           ]} />
-          <PropSelectInput label="Estilo de tarjeta" value={p.cardStyle ?? "rounded"} onChange={(v) => onUpdateProp("cardStyle", v)} options={[
+          <PropSelectInput label="Estilo de tarjeta" value={p['cardStyle'] ?? "rounded"} onChange={(v) => onUpdateProp("cardStyle", v)} options={[
             { value: "rounded", label: "Redondeado" },
             { value: "sharp", label: "Cuadrado" },
             { value: "pill", label: "Pastilla" },
           ]} />
-          <PropToggle label="Mostrar filtros" checked={p.showFilters ?? true} onChange={(v) => onUpdateProp("showFilters", v)} />
-          <PropToggle label="Mostrar buscador" checked={p.showSearch ?? true} onChange={(v) => onUpdateProp("showSearch", v)} />
-          <PropToggle label="Mostrar ordenamiento" checked={p.showSort ?? true} onChange={(v) => onUpdateProp("showSort", v)} />
+          <PropToggle label="Mostrar filtros" checked={p['showFilters'] ?? true} onChange={(v) => onUpdateProp("showFilters", v)} />
+          <PropToggle label="Mostrar buscador" checked={p['showSearch'] ?? true} onChange={(v) => onUpdateProp("showSearch", v)} />
+          <PropToggle label="Mostrar ordenamiento" checked={p['showSort'] ?? true} onChange={(v) => onUpdateProp("showSort", v)} />
         </>
       );
     case "quoter":
       return (
         <>
-          <PropTextInput label="Kicker" value={p.kicker ?? ""} onChange={(v) => onUpdateProp("kicker", v)} />
-          <PropTextInput label="Título" value={p.heading ?? ""} onChange={(v) => onUpdateProp("heading", v)} />
-          <PropTextInput label="Descripción" value={p.subheading ?? ""} onChange={(v) => onUpdateProp("subheading", v)} multiline />
+          <PropTextInput label="Kicker" value={p['kicker'] ?? ""} onChange={(v) => onUpdateProp("kicker", v)} />
+          <PropTextInput label="Título" value={p['heading'] ?? ""} onChange={(v) => onUpdateProp("heading", v)} />
+          <PropTextInput label="Descripción" value={p['subheading'] ?? ""} onChange={(v) => onUpdateProp("subheading", v)} multiline />
         </>
       );
     case "reviews":
       return (
         <>
-          <PropTextInput label="Título de la sección" value={p.heading ?? ""} onChange={(v) => onUpdateProp("heading", v)} />
-          <PropToggle label="Autoplay" checked={p.autoplay ?? true} onChange={(v) => onUpdateProp("autoplay", v)} />
-          <PropToggle label="Mostrar estrellas" checked={p.showStars ?? true} onChange={(v) => onUpdateProp("showStars", v)} />
+          <PropTextInput label="Título de la sección" value={p['heading'] ?? ""} onChange={(v) => onUpdateProp("heading", v)} />
+          <PropToggle label="Autoplay" checked={p['autoplay'] ?? true} onChange={(v) => onUpdateProp("autoplay", v)} />
+          <PropToggle label="Mostrar estrellas" checked={p['showStars'] ?? true} onChange={(v) => onUpdateProp("showStars", v)} />
         </>
       );
     case "services":
       return (
         <>
-          <PropTextInput label="Título de la sección" value={p.heading ?? ""} onChange={(v) => onUpdateProp("heading", v)} />
-          <PropSelectInput label="Disposición" value={p.layout ?? "grid"} onChange={(v) => onUpdateProp("layout", v)} options={[
+          <PropTextInput label="Título de la sección" value={p['heading'] ?? ""} onChange={(v) => onUpdateProp("heading", v)} />
+          <PropSelectInput label="Disposición" value={p['layout'] ?? "grid"} onChange={(v) => onUpdateProp("layout", v)} options={[
             { value: "grid", label: "Grilla" },
             { value: "list", label: "Lista" },
           ]} />
@@ -574,17 +586,17 @@ function SectionProps({ section, onUpdateProp }: { section: Section; onUpdatePro
     case "contact":
       return (
         <>
-          <PropTextInput label="Título de la sección" value={p.heading ?? ""} onChange={(v) => onUpdateProp("heading", v)} />
-          <PropToggle label="Mostrar teléfono" checked={p.showPhone ?? true} onChange={(v) => onUpdateProp("showPhone", v)} />
-          <PropToggle label="Mostrar email" checked={p.showEmail ?? true} onChange={(v) => onUpdateProp("showEmail", v)} />
-          <PropToggle label="Mostrar mapa" checked={p.showMap ?? false} onChange={(v) => onUpdateProp("showMap", v)} />
+          <PropTextInput label="Título de la sección" value={p['heading'] ?? ""} onChange={(v) => onUpdateProp("heading", v)} />
+          <PropToggle label="Mostrar teléfono" checked={p['showPhone'] ?? true} onChange={(v) => onUpdateProp("showPhone", v)} />
+          <PropToggle label="Mostrar email" checked={p['showEmail'] ?? true} onChange={(v) => onUpdateProp("showEmail", v)} />
+          <PropToggle label="Mostrar mapa" checked={p['showMap'] ?? false} onChange={(v) => onUpdateProp("showMap", v)} />
         </>
       );
     default:
       return (
         <>
-          <PropTextInput label="Título" value={p.heading ?? ""} onChange={(v) => onUpdateProp("heading", v)} />
-          <PropTextInput label="Contenido" value={p.content ?? ""} onChange={(v) => onUpdateProp("content", v)} multiline />
+          <PropTextInput label="Título" value={p['heading'] ?? ""} onChange={(v) => onUpdateProp("heading", v)} />
+          <PropTextInput label="Contenido" value={p['content'] ?? ""} onChange={(v) => onUpdateProp("content", v)} multiline />
         </>
       );
   }
@@ -603,24 +615,24 @@ function SectionPreview({ section, global }: { section: Section; global: PageCon
           className="relative flex min-h-[220px] items-center justify-center overflow-hidden"
           style={{ background: `linear-gradient(135deg, ${global.primaryColor}dd, ${global.accentColor}bb)` }}
         >
-          <div className="absolute inset-0 bg-black" style={{ opacity: (p.overlayOpacity ?? 60) / 100 * 0.6 }} />
-          <div className="relative z-10 px-8 py-10" style={{ textAlign: p.textAlign || "center" }}>
+          <div className="absolute inset-0 bg-black" style={{ opacity: (p['overlayOpacity'] ?? 60) / 100 * 0.6 }} />
+          <div className="relative z-10 px-8 py-10" style={{ textAlign: p['textAlign'] || "center" }}>
             <h1
-              className={`font-black leading-tight text-${p.headingSize || "5xl"} mb-3`}
-              style={{ color: p.headingColor || "#ffffff", fontSize: p.headingSize === "6xl" ? "3rem" : p.headingSize === "5xl" ? "2.4rem" : p.headingSize === "4xl" ? "2rem" : "1.6rem" }}
+              className={`font-black leading-tight text-${p['headingSize'] || "5xl"} mb-3`}
+              style={{ color: p['headingColor'] || "#ffffff", fontSize: p['headingSize'] === "6xl" ? "3rem" : p['headingSize'] === "5xl" ? "2.4rem" : p['headingSize'] === "4xl" ? "2rem" : "1.6rem" }}
             >
-              {p.heading || "Hero Title"}
+              {p['heading'] || "Hero Title"}
             </h1>
-            <p className="text-sm max-w-xl mx-auto" style={{ color: p.subheadingColor || "#ffffffcc" }}>
-              {p.subheading || "Subtitle goes here"}
+            <p className="text-sm max-w-xl mx-auto" style={{ color: p['subheadingColor'] || "#ffffffcc" }}>
+              {p['subheading'] || "Subtitle goes here"}
             </p>
-            {p.ctaText && (
+            {p['ctaText'] && (
               <div className="mt-5">
                 <span
                   className="inline-block rounded-full px-6 py-2.5 text-sm font-bold shadow-lg"
                   style={{ background: global.accentColor, color: "#fff", borderRadius: global.borderRadius }}
                 >
-                  {p.ctaText}
+                  {p['ctaText']}
                 </span>
               </div>
             )}
@@ -631,9 +643,9 @@ function SectionPreview({ section, global }: { section: Section; global: PageCon
     case "catalog":
       return (
         <div className="px-6 py-8">
-          <h2 className="text-lg font-bold mb-4" style={{ color: global.textColor }}>{p.heading || "Catálogo"}</h2>
-          <div className={`grid gap-3`} style={{ gridTemplateColumns: `repeat(${p.columns || 4}, 1fr)` }}>
-            {[1, 2, 3, 4].slice(0, Number(p.columns) || 4).map((i) => (
+          <h2 className="text-lg font-bold mb-4" style={{ color: global.textColor }}>{p['heading'] || "Catálogo"}</h2>
+          <div className={`grid gap-3`} style={{ gridTemplateColumns: `repeat(${p['columns'] || 4}, 1fr)` }}>
+            {[1, 2, 3, 4].slice(0, Number(p['columns']) || 4).map((i) => (
               <div key={i} className="rounded-xl bg-muted/50 border border-border aspect-[3/4] flex items-center justify-center text-xs text-muted-foreground" style={{ borderRadius: global.borderRadius }}>
                 Producto {i}
               </div>
@@ -645,9 +657,9 @@ function SectionPreview({ section, global }: { section: Section; global: PageCon
     case "quoter":
       return (
         <div className="px-6 py-8 bg-muted/40">
-          {p.kicker && <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: global.accentColor }}>{p.kicker}</span>}
-          <h2 className="text-lg font-bold mt-1" style={{ color: global.textColor }}>{p.heading || "Cotizador 3D"}</h2>
-          <p className="text-xs text-muted-foreground mt-1 max-w-md">{p.subheading}</p>
+          {p['kicker'] && <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: global.accentColor }}>{p['kicker']}</span>}
+          <h2 className="text-lg font-bold mt-1" style={{ color: global.textColor }}>{p['heading'] || "Cotizador 3D"}</h2>
+          <p className="text-xs text-muted-foreground mt-1 max-w-md">{p['subheading']}</p>
           <div className="mt-4 flex gap-3">
             <div className="h-32 flex-1 rounded-xl bg-gradient-to-br from-primary/20 to-accent/20 border border-border flex items-center justify-center text-xs text-muted-foreground" style={{ borderRadius: global.borderRadius }}>
               Vista 3D
@@ -662,11 +674,11 @@ function SectionPreview({ section, global }: { section: Section; global: PageCon
     case "reviews":
       return (
         <div className="px-6 py-8">
-          <h2 className="text-lg font-bold mb-4" style={{ color: global.textColor }}>{p.heading || "Reseñas"}</h2>
+          <h2 className="text-lg font-bold mb-4" style={{ color: global.textColor }}>{p['heading'] || "Reseñas"}</h2>
           <div className="flex gap-3 overflow-hidden">
             {[1, 2, 3].map((i) => (
               <div key={i} className="min-w-[160px] rounded-xl border border-border bg-card p-3" style={{ borderRadius: global.borderRadius }}>
-                {p.showStars && <div className="flex gap-0.5 text-amber-400 text-[10px] mb-1">★★★★★</div>}
+                {p['showStars'] && <div className="flex gap-0.5 text-amber-400 text-[10px] mb-1">★★★★★</div>}
                 <div className="h-2 w-3/4 rounded bg-muted mb-1" />
                 <div className="h-2 w-1/2 rounded bg-muted" />
                 <p className="mt-2 text-[10px] text-muted-foreground">— Cliente {i}</p>
@@ -679,8 +691,8 @@ function SectionPreview({ section, global }: { section: Section; global: PageCon
     case "services":
       return (
         <div className="px-6 py-8 bg-muted/30">
-          <h2 className="text-lg font-bold mb-4" style={{ color: global.textColor }}>{p.heading || "Servicios"}</h2>
-          <div className={`${p.layout === "list" ? "space-y-2" : "grid grid-cols-2 gap-3"}`}>
+          <h2 className="text-lg font-bold mb-4" style={{ color: global.textColor }}>{p['heading'] || "Servicios"}</h2>
+          <div className={`${p['layout'] === "list" ? "space-y-2" : "grid grid-cols-2 gap-3"}`}>
             {["Impresión 3D", "Corte Láser", "Eventos", "Postres"].map((s) => (
               <div key={s} className="rounded-xl border border-border bg-card p-3 text-xs font-medium" style={{ borderRadius: global.borderRadius }}>
                 {s}
@@ -693,7 +705,7 @@ function SectionPreview({ section, global }: { section: Section; global: PageCon
     case "contact":
       return (
         <div className="px-6 py-8">
-          <h2 className="text-lg font-bold mb-4" style={{ color: global.textColor }}>{p.heading || "Contacto"}</h2>
+          <h2 className="text-lg font-bold mb-4" style={{ color: global.textColor }}>{p['heading'] || "Contacto"}</h2>
           <div className="grid grid-cols-2 gap-3">
             <div className="rounded-xl border border-border bg-muted/30 p-3 col-span-2" style={{ borderRadius: global.borderRadius }}>
               <div className="h-2 w-1/3 rounded bg-muted mb-2" />
@@ -714,8 +726,8 @@ function SectionPreview({ section, global }: { section: Section; global: PageCon
     default:
       return (
         <div className="px-6 py-8">
-          <h2 className="text-lg font-bold">{p.heading || section.title}</h2>
-          <p className="text-xs text-muted-foreground">{p.content}</p>
+          <h2 className="text-lg font-bold">{p['heading'] || section.title}</h2>
+          <p className="text-xs text-muted-foreground">{p['content']}</p>
         </div>
       );
   }

@@ -5,6 +5,14 @@ import { toast } from "sonner";
 import { Plus, Trash2 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/admin/categories")({
+  head: () => ({ meta: [
+    { title: "Catálogos | JTP" },
+    { name: "description", content: "Catálogos del espacio de gestión de JTP." },
+    { property: "og:title", content: "Catálogos | JTP" },
+    { property: "og:description", content: "Catálogos del espacio de gestión de JTP." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   component: AdminCategories,
 });
 

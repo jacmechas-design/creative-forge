@@ -6,6 +6,14 @@ import { useAuth } from "@/hooks/useAuth";
 import { Card, Empty, Pill, SearchInput, Stat, btnGhost, cadExact, dateShort, downloadCsv, inputCls } from "@/components/admin/kit";
 
 export const Route = createFileRoute("/_authenticated/admin/orders")({
+  head: () => ({ meta: [
+    { title: "Pedidos | JTP" },
+    { name: "description", content: "Pedidos del espacio de gestión de JTP." },
+    { property: "og:title", content: "Pedidos | JTP" },
+    { property: "og:description", content: "Pedidos del espacio de gestión de JTP." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   component: OrdersAdmin,
 });
 

@@ -4,6 +4,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/admin/settings")({
+  head: () => ({ meta: [
+    { title: "Configuración de interfaz | JTP" },
+    { name: "description", content: "Configuración de interfaz del espacio de gestión de JTP." },
+    { property: "og:title", content: "Configuración de interfaz | JTP" },
+    { property: "og:description", content: "Configuración de interfaz del espacio de gestión de JTP." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   component: AdminSettings,
 });
 
