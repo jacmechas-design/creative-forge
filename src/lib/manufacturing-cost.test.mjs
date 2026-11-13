@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { calculateCosts, DEFAULT_COST_INPUTS as defaults, filamentWeight } from "./manufacturing-cost";
 
 const input = { ...defaults, hours: 2, minutes: 30, watts: 200, auxiliaryWatts: 100, electricityRate: 0.2, laborMinutes: 30, laborRate: 24, wastePercent: 0 };
-function result(process: "3d" | "uv" | "laser", overrides = {}) {
+function result(process, overrides = {}) {
   const calculation = calculateCosts(process, { ...input, ...overrides });
   if (!calculation.result) throw new Error(calculation.errors.join(", "));
   return calculation.result;
