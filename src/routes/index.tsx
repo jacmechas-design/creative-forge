@@ -5,7 +5,9 @@ import type { Tri } from "@/i18n/lang";
 import { CAT_LABELS, type Product } from "@/data/products";
 import { useCatalog } from "@/hooks/useCatalog";
 import { useAuth } from "@/hooks/useAuth";
-import { supabase } from "@/integrations/supabase/client";
+import { PortfolioGallery } from "@/components/PortfolioGallery";
+import { usePortfolio, type PortfolioItem } from "@/lib/portfolio";
+import { loadContent, DEFAULT_SITE_SETTINGS, type SiteSettings } from "@/lib/content";
 import { submitQuoteRequest } from "@/lib/quotes.functions";
 
 export const Route = createFileRoute("/")({
@@ -38,6 +40,8 @@ const T = {
   navServices: { en: "Services", fr: "Services", es: "Servicios" },
   navHow: { en: "How it works", fr: "Fonctionnement", es: "Cómo funciona" },
   navQuote: { en: "Get a quote", fr: "Devis", es: "Cotizar" },
+  navPortfolio: { en: "Portfolio", fr: "Portfolio", es: "Portafolio" },
+  seeAll: { en: "See full portfolio", fr: "Voir tout le portfolio", es: "Ver todo el portafolio" },
   heroKicker: { en: "Made to order", fr: "Fait sur commande", es: "Hecho por encargo" },
   ctaQuote: {
     en: "Request a free quote",
@@ -243,29 +247,8 @@ const STEPS: { title: Tri; text: Tri }[] = [
 /** Guess the service a catalog category belongs to, to pre-fill the form. */
 const CAT_SERVICE: Record<string, ServiceId> = { madera: "laser", "3d": "3d", juguetes: "3d" };
 
-interface Settings {
-  brand_name: string;
-  hero_title: string;
-  hero_subtitle: string;
-  primary_color: string;
-  contact_email: string;
-  contact_phone: string;
-  location: string;
-  instagram_url: string;
-  facebook_url: string;
-}
-
-const DEFAULT_SETTINGS: Settings = {
-  brand_name: "JTP",
-  hero_title: "Custom pieces, made in Edmonton",
-  hero_subtitle: "UV printing, laser engraving and 3D printing for gifts, events and businesses.",
-  primary_color: "#1e3a8a",
-  contact_email: "",
-  contact_phone: "",
-  location: "Edmonton, AB",
-  instagram_url: "",
-  facebook_url: "",
-};
+type Settings = SiteSettings;
+const DEFAULT_SETTINGS = DEFAULT_SITE_SETTINGS;
 
 const emptyForm = {
   name: "",
@@ -283,23 +266,6 @@ const emptyForm = {
 const MAX_FILE = 5 * 1024 * 1024;
 const FILE_TYPES = ["image/png", "image/jpeg", "image/webp", "application/pdf"];
 
-/** Reads one JSON document from the `app_content` table (not in the generated DB types). */
-type ContentClient = {
-  from: (table: string) => {
-    select: (cols: string) => {
-      eq: (
-        col: string,
-        v: string,
-      ) => { maybeSingle: () => PromiseLike<{ data: { data: unknown } | null }> };
-    };
-  };
-};
-async function loadContent<T>(id: string): Promise<T | null> {
-  const client = supabase as unknown as ContentClient;
-  const { data } = await client.from("app_content").select("data").eq("id", id).maybeSingle();
-  return (data?.data as T) ?? null;
-}
-
 const readBase64 = (file: File) =>
   new Promise<string>((resolve, reject) => {
     const r = new FileReader();
@@ -313,6 +279,7 @@ const readBase64 = (file: File) =>
 function Portfolio() {
   const { tr, money, lang, setLang } = useI18n();
   const { products, fromDatabase } = useCatalog();
+  const { data: projects = [] } = usePortfolio();
   const { isAdmin } = useAuth();
 
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
@@ -334,6 +301,15 @@ function Portfolio() {
     void loadContent<{ id: string; label: string }[]>("categories").then((d) => {
       if (Array.isArray(d)) setCategories(d);
     });
+    // Arriving from "Quote one like this" on /portfolio: pre-fill the reference and jump to the form.
+    const ref = new URLSearchParams(window.location.search).get("ref");
+    if (ref) {
+      setForm((f) => ({ ...f, reference: ref.slice(0, 200) }));
+      setTimeout(
+        () => document.getElementById("cotizar")?.scrollIntoView({ behavior: "smooth" }),
+        300,
+      );
+    }
   }, []);
 
   // Only real, published products from the admin catalog are shown; never the bundled demo data.
@@ -355,6 +331,12 @@ function Portfolio() {
       service: CAT_SERVICE[p.cat as string] ?? f.service,
     }));
     setDetail(null);
+    setDoneCode(null);
+    document.getElementById("cotizar")?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  const quoteProject = (p: PortfolioItem) => {
+    setForm((f) => ({ ...f, reference: p.title, service: p.service }));
     setDoneCode(null);
     document.getElementById("cotizar")?.scrollIntoView({ behavior: "smooth" });
   };
@@ -442,6 +424,12 @@ function Portfolio() {
                     {tr(l)}
                   </a>
                 ))}
+                <Link
+                  to="/portfolio"
+                  className="text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  {tr(T.navPortfolio)}
+                </Link>
               </nav>
               <div className="relative">
                 <button
@@ -567,100 +555,124 @@ function Portfolio() {
               <p className="text-muted-foreground">{tr(T.workText)}</p>
             </div>
 
-            {usedCats.length > 1 && (
-              <div className="mb-6 flex flex-wrap gap-2">
-                {[{ id: "todos", label: tr(T.all) }, ...usedCats].map((c) => (
-                  <button
-                    key={c.id}
-                    onClick={() => setCat(c.id)}
-                    aria-pressed={cat === c.id}
-                    className={`rounded-full px-4 py-2 text-sm font-semibold transition-colors ${
-                      cat === c.id
-                        ? "bg-foreground text-background"
-                        : "border border-border bg-card text-muted-foreground hover:text-foreground"
-                    }`}
+            {projects.length > 0 ? (
+              <>
+                <PortfolioGallery
+                  items={[...projects]
+                    .sort((x, y) => Number(y.featured) - Number(x.featured))
+                    .slice(0, 6)}
+                  showFilters={false}
+                  onQuote={quoteProject}
+                />
+                <div className="mt-8 text-center">
+                  <Link
+                    to="/portfolio"
+                    className="inline-flex rounded-2xl border border-border bg-card px-6 py-3 text-sm font-bold hover:bg-muted"
                   >
-                    {c.label}
-                  </button>
-                ))}
-              </div>
-            )}
-
-            {work.length === 0 ? (
-              <div className="rounded-3xl border border-dashed border-border bg-card p-10 text-center">
-                <p className="mx-auto max-w-lg text-muted-foreground">{tr(T.emptyWork)}</p>
-                {isAdmin && (
-                  <p className="mt-3 text-xs font-semibold text-primary">{tr(T.emptyWorkAdmin)}</p>
-                )}
-                <a
-                  href="#cotizar"
-                  className="mt-6 inline-flex rounded-2xl bg-gradient-warm px-6 py-3 text-sm font-bold text-rose-foreground shadow-soft"
-                >
-                  {tr(T.ctaQuote)}
-                </a>
-              </div>
+                    {tr(T.seeAll)} →
+                  </Link>
+                </div>
+              </>
             ) : (
-              <div className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3">
-                {shown.map((p) => (
-                  <article
-                    key={p.id}
-                    className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-soft sm:rounded-3xl"
-                  >
-                    <button
-                      onClick={() => setDetail(p)}
-                      className="relative aspect-[4/3] w-full overflow-hidden bg-muted"
-                      aria-label={`${tr(T.details)}: ${tr(p.name)}`}
-                    >
-                      <img
-                        src={p.img}
-                        alt={tr(p.name)}
-                        width={800}
-                        height={600}
-                        loading="lazy"
-                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                      />
-                      {isAdmin && (
-                        <Link
-                          to="/admin/products"
-                          search={{ edit: p.id }}
-                          onClick={(e) => e.stopPropagation()}
-                          className="absolute right-2 top-2 grid h-8 w-8 place-items-center rounded-full bg-amber-500 text-xs font-black text-white shadow-sm"
-                          aria-label="Edit"
-                        >
-                          ✎
-                        </Link>
-                      )}
-                    </button>
-                    <div className="flex flex-1 flex-col gap-1 p-3 sm:p-5">
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-primary sm:text-[11px]">
-                        {catLabel(p.cat as string)}
-                      </span>
-                      <h3 className="line-clamp-2 text-sm font-bold leading-snug sm:text-lg">
-                        {tr(p.name)}
-                      </h3>
-                      <p className="hidden text-xs leading-relaxed text-muted-foreground sm:line-clamp-2">
-                        {tr(p.desc)}
+              <>
+                {usedCats.length > 1 && (
+                  <div className="mb-6 flex flex-wrap gap-2">
+                    {[{ id: "todos", label: tr(T.all) }, ...usedCats].map((c) => (
+                      <button
+                        key={c.id}
+                        onClick={() => setCat(c.id)}
+                        aria-pressed={cat === c.id}
+                        className={`rounded-full px-4 py-2 text-sm font-semibold transition-colors ${
+                          cat === c.id
+                            ? "bg-foreground text-background"
+                            : "border border-border bg-card text-muted-foreground hover:text-foreground"
+                        }`}
+                      >
+                        {c.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {work.length === 0 ? (
+                  <div className="rounded-3xl border border-dashed border-border bg-card p-10 text-center">
+                    <p className="mx-auto max-w-lg text-muted-foreground">{tr(T.emptyWork)}</p>
+                    {isAdmin && (
+                      <p className="mt-3 text-xs font-semibold text-primary">
+                        {tr(T.emptyWorkAdmin)}
                       </p>
-                      <div className="mt-auto flex flex-col gap-2 pt-3 sm:flex-row sm:items-center sm:justify-between">
-                        {p.price > 0 && (
-                          <span className="text-sm text-muted-foreground">
-                            {tr(T.from)}{" "}
-                            <b className="text-base font-black text-foreground sm:text-lg">
-                              {money(p.price)}
-                            </b>
-                          </span>
-                        )}
+                    )}
+                    <a
+                      href="#cotizar"
+                      className="mt-6 inline-flex rounded-2xl bg-gradient-warm px-6 py-3 text-sm font-bold text-rose-foreground shadow-soft"
+                    >
+                      {tr(T.ctaQuote)}
+                    </a>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3">
+                    {shown.map((p) => (
+                      <article
+                        key={p.id}
+                        className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-soft sm:rounded-3xl"
+                      >
                         <button
-                          onClick={() => quoteFrom(p)}
-                          className="rounded-xl bg-primary px-3 py-2 text-xs font-bold text-primary-foreground sm:rounded-2xl"
+                          onClick={() => setDetail(p)}
+                          className="relative aspect-[4/3] w-full overflow-hidden bg-muted"
+                          aria-label={`${tr(T.details)}: ${tr(p.name)}`}
                         >
-                          {tr(T.quoteThis)}
+                          <img
+                            src={p.img}
+                            alt={tr(p.name)}
+                            width={800}
+                            height={600}
+                            loading="lazy"
+                            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                          />
+                          {isAdmin && (
+                            <Link
+                              to="/admin/products"
+                              search={{ edit: p.id }}
+                              onClick={(e) => e.stopPropagation()}
+                              className="absolute right-2 top-2 grid h-8 w-8 place-items-center rounded-full bg-amber-500 text-xs font-black text-white shadow-sm"
+                              aria-label="Edit"
+                            >
+                              ✎
+                            </Link>
+                          )}
                         </button>
-                      </div>
-                    </div>
-                  </article>
-                ))}
-              </div>
+                        <div className="flex flex-1 flex-col gap-1 p-3 sm:p-5">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-primary sm:text-[11px]">
+                            {catLabel(p.cat as string)}
+                          </span>
+                          <h3 className="line-clamp-2 text-sm font-bold leading-snug sm:text-lg">
+                            {tr(p.name)}
+                          </h3>
+                          <p className="hidden text-xs leading-relaxed text-muted-foreground sm:line-clamp-2">
+                            {tr(p.desc)}
+                          </p>
+                          <div className="mt-auto flex flex-col gap-2 pt-3 sm:flex-row sm:items-center sm:justify-between">
+                            {p.price > 0 && (
+                              <span className="text-sm text-muted-foreground">
+                                {tr(T.from)}{" "}
+                                <b className="text-base font-black text-foreground sm:text-lg">
+                                  {money(p.price)}
+                                </b>
+                              </span>
+                            )}
+                            <button
+                              onClick={() => quoteFrom(p)}
+                              className="rounded-xl bg-primary px-3 py-2 text-xs font-bold text-primary-foreground sm:rounded-2xl"
+                            >
+                              {tr(T.quoteThis)}
+                            </button>
+                          </div>
+                        </div>
+                      </article>
+                    ))}
+                  </div>
+                )}
+              </>
             )}
           </div>
         </section>
