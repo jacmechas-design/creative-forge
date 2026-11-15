@@ -19,13 +19,34 @@ type GlobalSettings = {
   hero_title: string;
   hero_subtitle: string;
   primary_color: string;
+  brand_name: string;
+  location: string;
+  contact_email: string;
+  contact_phone: string;
+  instagram_url: string;
+  facebook_url: string;
 };
 
 const DEFAULT_SETTINGS: GlobalSettings = {
   hero_title: "Transformamos tus Ideas en Realidad",
   hero_subtitle: "Diseño, impresión 3D, corte láser y soluciones creativas para cualquier proyecto.",
   primary_color: "#1e3a8a", // Default deep blue
+  brand_name: "JTP",
+  location: "Edmonton, AB",
+  contact_email: "",
+  contact_phone: "",
+  instagram_url: "",
+  facebook_url: "",
 };
+
+const CONTACT_FIELDS: { key: keyof GlobalSettings; label: string; placeholder: string; type?: string }[] = [
+  { key: "brand_name", label: "Nombre de tu marca", placeholder: "JTP" },
+  { key: "location", label: "Ciudad", placeholder: "Edmonton, AB" },
+  { key: "contact_email", label: "Correo de contacto", placeholder: "tucorreo@gmail.com", type: "email" },
+  { key: "contact_phone", label: "Teléfono / WhatsApp", placeholder: "+1 780 …", type: "tel" },
+  { key: "instagram_url", label: "Enlace de Instagram", placeholder: "https://instagram.com/tu_cuenta", type: "url" },
+  { key: "facebook_url", label: "Enlace de Facebook / Marketplace", placeholder: "https://facebook.com/…", type: "url" },
+];
 
 function AdminEditor() {
   const [data, setData] = useState<GlobalSettings>(DEFAULT_SETTINGS);
@@ -134,6 +155,30 @@ function AdminEditor() {
           </div>
         </div>
 
+      </div>
+
+      <div className="mt-6 space-y-4 bg-card border border-border rounded-3xl p-6 shadow-sm">
+        <h3 className="text-lg font-bold border-b pb-2">3. Marca y contacto</h3>
+        <p className="text-xs text-muted-foreground">
+          Aparecen junto al formulario de cotización. Deja vacío lo que no quieras mostrar.
+        </p>
+        <div className="grid gap-4 sm:grid-cols-2">
+          {CONTACT_FIELDS.map((f) => (
+            <div key={f.key}>
+              <label htmlFor={`gs-${f.key}`} className="block text-sm font-semibold mb-1">
+                {f.label}
+              </label>
+              <input
+                id={`gs-${f.key}`}
+                type={f.type ?? "text"}
+                value={data[f.key]}
+                placeholder={f.placeholder}
+                onChange={(e) => setData({ ...data, [f.key]: e.target.value })}
+                className="w-full rounded-xl border border-input bg-background px-4 py-2 text-sm focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+              />
+            </div>
+          ))}
+        </div>
       </div>
 
       <div className="mt-8 flex justify-end">

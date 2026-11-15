@@ -42,6 +42,25 @@ interface Quote {
   created_at: string;
 }
 
+/** Shows request notes keeping line breaks; attachment links become a button. */
+function Notes({ text }: { text: string }) {
+  return (
+    <div className="grid gap-0.5 text-xs text-muted-foreground">
+      {text.split("\n").map((line, i) => {
+        const url = line.match(/https:\/\/\S+/)?.[0];
+        if (url) {
+          return (
+            <a key={i} href={url} target="_blank" rel="noopener noreferrer" className="w-fit font-semibold text-primary hover:underline">
+              Ver archivo adjunto
+            </a>
+          );
+        }
+        return line ? <p key={i} className="whitespace-pre-wrap">{line}</p> : <br key={i} />;
+      })}
+    </div>
+  );
+}
+
 function QuotesAdmin() {
   const { isAdmin } = useAuth();
   const qc = useQueryClient();
@@ -88,7 +107,7 @@ function QuotesAdmin() {
 
   return (
     <Card
-      title="Cotizaciones de impresión 3D"
+      title="Solicitudes de cotización"
       action={
         <div className="flex flex-wrap items-center gap-2">
         <SearchInput value={search} onChange={setSearch} placeholder="Buscar por cliente, archivo o material" />
@@ -131,7 +150,7 @@ function QuotesAdmin() {
       {isLoading ? (
         <Empty>Cargando cotizaciones…</Empty>
       ) : list.length === 0 ? (
-        <Empty>Sin cotizaciones todavía. Las del estudio 3D llegarán aquí.</Empty>
+        <Empty>Sin solicitudes todavía. Las del formulario de la página llegarán aquí.</Empty>
       ) : (
         <ul className="grid gap-2">
           {list.map((q) => (
@@ -146,7 +165,7 @@ function QuotesAdmin() {
                     {dateShort(q.created_at)}
                   </p>
                 </div>
-                <span className="text-sm font-bold">{cadExact(Number(q.estimate_cad ?? 0))}</span>
+                {q.estimate_cad != null && <span className="text-sm font-bold">{cadExact(Number(q.estimate_cad))}</span>}
                 <select
                   value={q.status}
                   onChange={(e) => setStatus.mutate({ id: q.id, status: e.target.value as Status })}
@@ -177,7 +196,7 @@ function QuotesAdmin() {
                 {q.qty ? <Pill>{q.qty} u.</Pill> : null}
                 {q.volume_cm3 ? <Pill>{Number(q.volume_cm3).toFixed(1)} cm³</Pill> : null}
               </div>
-              {q.notes && <p className="text-xs text-muted-foreground">{q.notes}</p>}
+              {q.notes && <Notes text={q.notes} />}
             </li>
           ))}
         </ul>
