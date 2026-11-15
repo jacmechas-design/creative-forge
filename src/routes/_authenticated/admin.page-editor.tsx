@@ -41,6 +41,8 @@ interface PageConfig {
     textColor: string;
     fontFamily: string;
     borderRadius: string;
+    facebookUrl: string;
+    instagramUrl: string;
   };
 }
 
@@ -109,6 +111,8 @@ const DEFAULT_GLOBAL = {
   textColor: "#1f2937",
   fontFamily: "Inter",
   borderRadius: "16px",
+  facebookUrl: "",
+  instagramUrl: "",
 };
 
 const FONTS = ["Inter", "Roboto", "Outfit", "Poppins", "Montserrat", "DM Sans", "Playfair Display"];
@@ -163,6 +167,8 @@ function PageEditor() {
           hero_title: config.sections.find((s) => s.id === "hero")?.props['heading'] ?? "",
           hero_subtitle: config.sections.find((s) => s.id === "hero")?.props['subheading'] ?? "",
           primary_color: config.global.primaryColor,
+          facebook_url: config.global.facebookUrl,
+          instagram_url: config.global.instagramUrl,
         },
       });
     }
@@ -287,6 +293,23 @@ function PageEditor() {
                   </label>
                 ))}
 
+                <h4 className="pt-3 text-xs font-bold uppercase tracking-wider text-muted-foreground">Redes Sociales</h4>
+                {([
+                  ["facebookUrl", "Facebook URL"],
+                  ["instagramUrl", "Instagram URL"],
+                ] as const).map(([key, label]) => (
+                  <label key={key} className="flex flex-col gap-1 text-sm">
+                    <span className="text-xs font-semibold text-muted-foreground">{label}</span>
+                    <input
+                      type="text"
+                      placeholder="https://..."
+                      value={(config.global as any)[key]}
+                      onChange={(e) => update((c) => ({ ...c, global: { ...c.global, [key]: e.target.value } }))}
+                      className="w-full rounded-xl border border-border bg-card px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+                    />
+                  </label>
+                ))}
+
                 <h4 className="pt-3 text-xs font-bold uppercase tracking-wider text-muted-foreground">Tipografía</h4>
                 <select
                   value={config.global.fontFamily}
@@ -392,7 +415,7 @@ function PageEditor() {
             </h3>
           </div>
           <div className="flex-1 overflow-y-auto p-4 space-y-5">
-            <SectionProps section={selected} onUpdateProp={(k, v) => updateSectionProp(selected.id, k, v)} />
+            <SectionProps key={selected.id} section={selected} onUpdateProp={(k, v) => updateSectionProp(selected.id, k, v)} />
           </div>
         </aside>
       )}
@@ -406,21 +429,31 @@ function PageEditor() {
    ──────────────────────────────────────────────── */
 function PropTextInput({ label, value, onChange, multiline }: { label: string; value: string; onChange: (v: string) => void; multiline?: boolean }) {
   const [localValue, setLocalValue] = useState(value);
+  const lastReportedValue = useRef(value);
+  const onChangeRef = useRef(onChange);
+  
+  useEffect(() => {
+    onChangeRef.current = onChange;
+  }, [onChange]);
 
   // Sync from parent when it changes externally (e.g. switching sections)
   useEffect(() => {
-    setLocalValue(value);
+    if (value !== lastReportedValue.current) {
+      setLocalValue(value);
+      lastReportedValue.current = value;
+    }
   }, [value]);
 
   // Push changes to parent after a short debounce to avoid re-rendering the whole page on every keystroke
   useEffect(() => {
     const timer = setTimeout(() => {
       if (localValue !== value) {
-        onChange(localValue);
+        lastReportedValue.current = localValue;
+        onChangeRef.current(localValue);
       }
     }, 400);
     return () => clearTimeout(timer);
-  }, [localValue, value, onChange]);
+  }, [localValue, value]);
 
   return (
     <div>

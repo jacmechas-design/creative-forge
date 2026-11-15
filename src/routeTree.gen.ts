@@ -17,6 +17,7 @@ import { Route as ApiDesignImageRouteImport } from './routes/api/design-image'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
 import { Route as AuthenticatedAdminCalculatorRouteImport } from './routes/_authenticated/admin.calculator'
 import { Route as AuthenticatedAdminCategoriesRouteImport } from './routes/_authenticated/admin.categories'
+import { Route as AuthenticatedAdminCostsRouteImport } from './routes/_authenticated/admin.costs'
 import { Route as AuthenticatedAdminEditorRouteImport } from './routes/_authenticated/admin.editor'
 import { Route as AuthenticatedAdminMessagesRouteImport } from './routes/_authenticated/admin.messages'
 import { Route as AuthenticatedAdminOrdersRouteImport } from './routes/_authenticated/admin.orders'
@@ -67,6 +68,11 @@ const AuthenticatedAdminCategoriesRoute =
     path: '/categories',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const AuthenticatedAdminCostsRoute = AuthenticatedAdminCostsRouteImport.update({
+  id: '/costs',
+  path: '/costs',
+  getParentRoute: () => AuthenticatedAdminRoute,
+} as any)
 const AuthenticatedAdminEditorRoute =
   AuthenticatedAdminEditorRouteImport.update({
     id: '/editor',
@@ -122,6 +128,7 @@ export interface FileRoutesByFullPath {
   '/api/design-image': typeof ApiDesignImageRoute
   '/admin/calculator': typeof AuthenticatedAdminCalculatorRoute
   '/admin/categories': typeof AuthenticatedAdminCategoriesRoute
+  '/admin/costs': typeof AuthenticatedAdminCostsRoute
   '/admin/editor': typeof AuthenticatedAdminEditorRoute
   '/admin/messages': typeof AuthenticatedAdminMessagesRoute
   '/admin/orders': typeof AuthenticatedAdminOrdersRoute
@@ -138,6 +145,7 @@ export interface FileRoutesByTo {
   '/api/design-image': typeof ApiDesignImageRoute
   '/admin/calculator': typeof AuthenticatedAdminCalculatorRoute
   '/admin/categories': typeof AuthenticatedAdminCategoriesRoute
+  '/admin/costs': typeof AuthenticatedAdminCostsRoute
   '/admin/editor': typeof AuthenticatedAdminEditorRoute
   '/admin/messages': typeof AuthenticatedAdminMessagesRoute
   '/admin/orders': typeof AuthenticatedAdminOrdersRoute
@@ -157,6 +165,7 @@ export interface FileRoutesById {
   '/api/design-image': typeof ApiDesignImageRoute
   '/_authenticated/admin/calculator': typeof AuthenticatedAdminCalculatorRoute
   '/_authenticated/admin/categories': typeof AuthenticatedAdminCategoriesRoute
+  '/_authenticated/admin/costs': typeof AuthenticatedAdminCostsRoute
   '/_authenticated/admin/editor': typeof AuthenticatedAdminEditorRoute
   '/_authenticated/admin/messages': typeof AuthenticatedAdminMessagesRoute
   '/_authenticated/admin/orders': typeof AuthenticatedAdminOrdersRoute
@@ -176,6 +185,7 @@ export interface FileRouteTypes {
     | '/api/design-image'
     | '/admin/calculator'
     | '/admin/categories'
+    | '/admin/costs'
     | '/admin/editor'
     | '/admin/messages'
     | '/admin/orders'
@@ -192,6 +202,7 @@ export interface FileRouteTypes {
     | '/api/design-image'
     | '/admin/calculator'
     | '/admin/categories'
+    | '/admin/costs'
     | '/admin/editor'
     | '/admin/messages'
     | '/admin/orders'
@@ -210,6 +221,7 @@ export interface FileRouteTypes {
     | '/api/design-image'
     | '/_authenticated/admin/calculator'
     | '/_authenticated/admin/categories'
+    | '/_authenticated/admin/costs'
     | '/_authenticated/admin/editor'
     | '/_authenticated/admin/messages'
     | '/_authenticated/admin/orders'
@@ -286,6 +298,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminCategoriesRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/costs': {
+      id: '/_authenticated/admin/costs'
+      path: '/costs'
+      fullPath: '/admin/costs'
+      preLoaderRoute: typeof AuthenticatedAdminCostsRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/admin/editor': {
       id: '/_authenticated/admin/editor'
       path: '/editor'
@@ -348,6 +367,7 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminCalculatorRoute: typeof AuthenticatedAdminCalculatorRoute
   AuthenticatedAdminCategoriesRoute: typeof AuthenticatedAdminCategoriesRoute
+  AuthenticatedAdminCostsRoute: typeof AuthenticatedAdminCostsRoute
   AuthenticatedAdminEditorRoute: typeof AuthenticatedAdminEditorRoute
   AuthenticatedAdminMessagesRoute: typeof AuthenticatedAdminMessagesRoute
   AuthenticatedAdminOrdersRoute: typeof AuthenticatedAdminOrdersRoute
@@ -362,6 +382,7 @@ interface AuthenticatedAdminRouteChildren {
 const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminCalculatorRoute: AuthenticatedAdminCalculatorRoute,
   AuthenticatedAdminCategoriesRoute: AuthenticatedAdminCategoriesRoute,
+  AuthenticatedAdminCostsRoute: AuthenticatedAdminCostsRoute,
   AuthenticatedAdminEditorRoute: AuthenticatedAdminEditorRoute,
   AuthenticatedAdminMessagesRoute: AuthenticatedAdminMessagesRoute,
   AuthenticatedAdminOrdersRoute: AuthenticatedAdminOrdersRoute,

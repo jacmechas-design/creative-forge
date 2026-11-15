@@ -13,6 +13,7 @@ const NAV = [
   { to: "/admin/calculator", label: "Calculadora de precios", adminOnly: false },
   { to: "/admin/orders", label: "Pedidos", adminOnly: false },
   { to: "/admin/quotes", label: "Cotizaciones", adminOnly: false },
+  { to: "/admin/costs" as string, label: "Costos", adminOnly: true },
   { to: "/admin/messages", label: "Mensajes", adminOnly: false },
   { to: "/admin/team", label: "Equipo", adminOnly: true },
   { to: "/admin/categories" as string, label: "Catálogos", adminOnly: true },
